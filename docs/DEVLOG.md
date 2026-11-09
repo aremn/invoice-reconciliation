@@ -49,3 +49,48 @@ results kept apart from app output, and a record of real AI mistakes caught by c
 **Next (day 2):** extend the data to 6–8 invoices (incl. an extraction-correction case) with
 independently computed expected results; model extraction with structured output; save real
 responses for replay; batch run into SQLite.
+
+## Day 2 — 2026-11-10
+
+**Done**
+- Data: four more invoices and one unreadable (blurred) document, three more purchase orders and
+  receipts (`data/additions.json`, rendered with `scripts/render_invoices.py`). Batch order in
+  `data/documents.json`. Method in `data/GENERATION.md`.
+- Answer key `data/expected-results.json`, written by hand before the app saw the new documents,
+  plus `scripts/check_expected.py` (imports nothing from `app/`). I changed one number in the key on
+  purpose to see that the checker reports it; it did.
+- `app/llm.py` (the only provider call, live / replay / simulated failure), `app/extract.py`
+  (strict JSON schema → Pydantic → integer cents), `app/store.py` (SQLite: original extraction,
+  corrections, results), `app/run.py` (batch command). 46 tests pass; none of them calls the model.
+- One live run of the batch: 8 real calls (about 1,040 input and 50 output tokens each) + 1 simulated failure.
+
+**What did not work / fixes**
+1. *The model "fixed" a typo it was told to copy.* `po-typo` prints `P0-4` (digit zero). The model
+   returned `PO-4`, so the app matched PO-4 and reported a $5.00 overcharge, while the answer key
+   says `unresolved`. Caught by comparing the batch table with `data/expected-results.json`
+   (7 of 8 real extractions matched, this one did not). Tried:
+   - prompt v2 with an explicit line about digit 0 vs letter O → still `PO-4`;
+   - image `detail: high` instead of `auto` → still `PO-4` (same token count);
+   - the larger `gpt-5.4` → still `PO-4`.
+
+   Nothing fixed it, so prompt v2 was dropped (v1 stays active; both files and both responses are
+   kept in `prompts/` and `replay/history/`). No rule was added to the code to guess around it.
+   It is recorded as a known limitation, and it became the extraction-correction case: the reviewer
+   corrects the extracted `po_id` to the printed `P0-4`, the rerun gives `unresolved` and the
+   recoverable total drops from $25.00 to $20.00 (`test_reviewer_correction_reruns_and_survives_a_restart`).
+   The answer key was not edited: it already had both hand-calculated results (P0-4 and PO-4).
+2. *Tests failed on this machine with `PermissionError` on the system temp folder.* pytest now uses a
+   folder inside the project (`--basetemp=.pytest_tmp`, git-ignored).
+3. *`from app.reference import DATA_DIR` broke* after the reference loader started reading two files;
+   paths now live in `app/config.py`.
+
+**Decisions**
+- The model returns every field as printed text; quantities and amounts are converted in code, so a
+  value like "five" or "20.005" becomes a visible `failed`, not a silently rounded number.
+- All seven fields `null` = unreadable document = `failed`.
+- Each saved response stores a hash of prompt + image, and replay refuses a response recorded for a
+  different input, so an old answer is never shown for a changed invoice.
+- A new batch run keeps reviewer corrections; `--reset` or a changed image drops them.
+
+**Next:** discrepancy notes drafted by the model from verified findings, the Streamlit review queue
+with the correction flow, the process-improvement insight, check results, `ai-workflow/` records.

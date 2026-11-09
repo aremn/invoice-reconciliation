@@ -85,5 +85,7 @@ effect was checked. So:
 - Install: `python -m venv .venv` then `.venv/Scripts/python -m pip install -r requirements.txt`
 - Tests: `.venv/Scripts/python -m pytest -q`
 - Model: `gpt-5.4-mini-2026-03-17`, temperature 0 (key in `.env` as `OPENAI_API_KEY`, never committed)
-- Batch run, review app, replay without key: to be added.
+- Batch run: `.venv/Scripts/python -m app.run --mode replay` (no key) or `--mode live` (re-records `replay/`); `--reset` drops reviewer corrections.
+- Answer-key check: `.venv/Scripts/python scripts/check_expected.py`
+- Review app: to be added.
 - Keep `docs/DEVLOG.md` updated per working session: what was done, what failed and why, the fix.

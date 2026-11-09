@@ -59,14 +59,19 @@ compared with it in `docs/check-results.md` (added with the final checks).
 | Purchase order | PO-4: S1, ADP-1, quantity 10, unit 1250 |
 | Receipt | RC-4: PO-4, quantity 10 |
 
-- Before correction: there is no purchase order "P0-4" → **unresolved**, no expected amount.
-  The app must not pick PO-4 by itself.
-- The reviewer corrects the extracted `po_id` to `PO-4` and reruns.
-- After correction: expected = 10 × 1250 = **12500**. Billed = 10 × 1300 = **13000**.
-  Difference = 13000 − 12500 = **+500** → **discrepant**.
-- Recoverable total for the batch: **2000** before the correction, **2500** after it.
-- The corrected value and the new result must still be there after the app is restarted, and the
-  original extraction (`P0-4`) must stay visible.
+Two results, both calculated by hand before the app was run:
+
+- With reference **P0-4** (what is printed): there is no such purchase order → **unresolved**, no
+  expected amount. The closest-looking PO-4 must not be picked. Batch recoverable total: **2000**, payable invoices: **3**.
+- With reference **PO-4**: expected = 10 × 1250 = **12500**. Billed = 10 × 1300 = **13000**.
+  Difference = 13000 − 12500 = **+500** → **discrepant**. Batch recoverable total: **2500**, payable invoices: **4**.
+
+What happened with the real model (2026-11-10): it returned `PO-4` instead of the printed `P0-4`.
+So the correction in the demonstration is a real extraction correction: the app first shows the
+PO-4 result; the reviewer compares the image with the extracted field, corrects `po_id` to `P0-4`
+and reruns; the result must become **unresolved** and the recoverable total must drop from 2500 to 2000.
+The corrected value and the new result must still be there after a restart, and the original
+extraction (`PO-4`) must stay visible.
 
 ## Hand check
 

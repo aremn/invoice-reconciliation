@@ -31,7 +31,7 @@ the supplied PNG files are used as they are.
 |---|---|---|---|
 | `short-receipt` | a | INV-4, S1, PO-3, HUB-1, 5 × 35.00 = 175.00 | PO-3 ordered 5, receipt RC-3 confirms only 4: quantity check against the receipt |
 | `supplier-conflict` | b | INV-5, S2, PO-1, CAB-1, 5 × 20.00 = 100.00 | PO-1 belongs to S1: a conflicting reference must stay unresolved |
-| `po-typo` | a | INV-6, S1, **P0-4** (digit zero), ADP-1, 10 × 13.00 = 130.00 | Extraction-correction case: the reference does not match until a reviewer corrects it to PO-4 |
+| `po-typo` | a | INV-6, S1, **P0-4** (digit zero), ADP-1, 10 × 13.00 = 130.00 | Extraction-correction case: a reference that looks like PO-4 but is not. The model misreads it as `PO-4`; a reviewer corrects the extracted field (see `docs/reference-cases.md`, case 5) |
 | `api-error` | b | INV-7, S2, PO-5, SW-1, 2 × 45.00 = 90.00 | The model call for this document is **simulated to fail** (see `data/documents.json`) |
 | `unreadable` | a (blurred) | nothing legible | Deliberately invalid input: real model call on an unreadable image |
 
