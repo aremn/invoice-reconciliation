@@ -62,6 +62,24 @@ Use temperature 0 and a JSON / structured-output mode.
 - Commit in small steps with clear messages; history is part of the submission.
 - Update `README.md` time log and `ai-workflow/` records as you go, not at the end.
 
+## Reviewability
+
+The brief's assessment section scores functional thinking, technical execution, LLM use,
+creativity and communication (1–4). In the follow-up the candidate explains one generated module,
+inspects one failure, changes an input and reruns, and explains one AI-setup setting and how its
+effect was checked. So:
+
+- Plain code over clever code: every module must be explainable line by line.
+- Failures must be easy to inspect: raw model responses in `replay/`, readable Pydantic validation
+  errors, a visible `failed` status with the error text in the batch output and the UI.
+- Changing an input and rerunning is one documented command (edit or add an invoice record →
+  render → run the batch).
+- Expected results stay separate from app output, so a case can be calculated by hand first and
+  then compared with the app.
+- Record real cases where AI output was wrong, the check that caught it, and the fix in `docs/DEVLOG.md`.
+- Extra data, polished mock documents, extra infrastructure, or unused skills/agents/hooks earn no
+  credit. The required flow comes first.
+
 ## Commands
 
 - Install: `python -m venv .venv` then `.venv/Scripts/python -m pip install -r requirements.txt`

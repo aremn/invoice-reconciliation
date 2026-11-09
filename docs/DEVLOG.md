@@ -41,6 +41,11 @@ tokens. Speed does not matter for a batch of eight invoices.
   cause is a misread field, and a reviewer correction should fix it rather than produce a false claim.
 - No rounding: amounts are parsed with `Decimal` and fractions of a cent are rejected.
 
+**Agent instructions changed.** Added a "Reviewability" section to `CLAUDE.md`, based on the
+hiring-team part of the assignment page (summarised by a separate Claude session and checked against
+the page text): plain code, inspectable failures, one-command rerun after changing an input, expected
+results kept apart from app output, and a record of real AI mistakes caught by checks.
+
 **Next (day 2):** extend the data to 6–8 invoices (incl. an extraction-correction case) with
 independently computed expected results; model extraction with structured output; save real
 responses for replay; batch run into SQLite.
