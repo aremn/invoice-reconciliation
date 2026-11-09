@@ -1,0 +1,126 @@
+{
+  "about": "Answer key written by hand from tasks/invoices/seed.json, data/additions.json and tasks/invoices/domain.md. It is not produced by the application. scripts/check_expected.py re-checks the arithmetic and the ID links without importing the app.",
+  "documents": [
+    {
+      "file_id": "clean",
+      "status": "reconciled",
+      "po_id": "PO-1",
+      "receipt_ids": ["RC-1"],
+      "expected_cents": 10000,
+      "billed_cents": 10000,
+      "difference_cents": 0,
+      "count_as_payable": true,
+      "rule": "Rule 2: S1 + PO-1 match. Rule 3: expected = ordered quantity x agreed unit price.",
+      "arithmetic": "expected 5 x 2000 = 10000; billed 10000; 10000 - 10000 = 0; billed qty 5 = ordered 5 = received 5 (RC-1)"
+    },
+    {
+      "file_id": "wrong-price",
+      "status": "discrepant",
+      "po_id": "PO-2",
+      "receipt_ids": ["RC-2"],
+      "expected_cents": 10000,
+      "billed_cents": 12000,
+      "difference_cents": 2000,
+      "count_as_payable": true,
+      "rule": "Rule 4: billed - expected, positive = overcharge (the worked example in domain.md).",
+      "arithmetic": "expected 5 x 2000 = 10000; billed 5 x 2400 = 12000; 12000 - 10000 = 2000"
+    },
+    {
+      "file_id": "duplicate",
+      "status": "duplicate",
+      "duplicate_of": "clean",
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Rule 4: same supplier ID + invoice number (S1, INV-1) as the document 'clean', which was received first.",
+      "arithmetic": "none: a duplicate is not payable and not recoverable"
+    },
+    {
+      "file_id": "missing-reference",
+      "status": "unresolved",
+      "po_id": null,
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Rule 2: no purchase-order reference. PO-1 and PO-2 both look the same by amount, so nothing is matched.",
+      "arithmetic": "none: no expected amount without a match"
+    },
+    {
+      "file_id": "short-receipt",
+      "status": "discrepant",
+      "po_id": "PO-3",
+      "receipt_ids": ["RC-3"],
+      "expected_cents": 17500,
+      "billed_cents": 17500,
+      "difference_cents": 0,
+      "count_as_payable": true,
+      "rule": "Rule 3: billed quantity is compared with received quantity. Billed 5, received 4 (README assumption 2: a quantity difference is discrepant even when the amount difference is 0).",
+      "arithmetic": "expected 5 x 3500 = 17500; billed 17500; 17500 - 17500 = 0; billed qty 5 vs received 4 (RC-3)"
+    },
+    {
+      "file_id": "supplier-conflict",
+      "status": "unresolved",
+      "po_id": null,
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Rule 2: conflicting reference. The invoice is from S2 but PO-1 belongs to S1.",
+      "arithmetic": "none: no expected amount without a match"
+    },
+    {
+      "file_id": "po-typo",
+      "status": "unresolved",
+      "po_id": null,
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Rule 2: the invoice prints P0-4 (digit zero). There is no such purchase order, and the closest-looking one (PO-4) must not be picked automatically.",
+      "arithmetic": "none: no expected amount without a match"
+    },
+    {
+      "file_id": "api-error",
+      "status": "failed",
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Simulated model/API failure (labelled simulated-failure). The batch must continue.",
+      "arithmetic": "none"
+    },
+    {
+      "file_id": "unreadable",
+      "status": "failed",
+      "expected_cents": null,
+      "difference_cents": null,
+      "count_as_payable": false,
+      "rule": "Blurred image: no field can be read, so nothing may be extracted or matched.",
+      "arithmetic": "none"
+    }
+  ],
+  "summary": {
+    "counts": {"reconciled": 1, "discrepant": 2, "duplicate": 1, "unresolved": 3, "failed": 2},
+    "recoverable_cents": 2000,
+    "payable_invoices": 3,
+    "arithmetic": "recoverable = positive differences on discrepant invoices = 2000 (wrong-price) + 0 (short-receipt); payable = clean, wrong-price, short-receipt"
+  },
+  "after_correction": {
+    "correction": {"file_id": "po-typo", "field": "po_id", "from": "P0-4", "to": "PO-4"},
+    "document": {
+      "file_id": "po-typo",
+      "status": "discrepant",
+      "po_id": "PO-4",
+      "receipt_ids": ["RC-4"],
+      "expected_cents": 12500,
+      "billed_cents": 13000,
+      "difference_cents": 500,
+      "count_as_payable": true,
+      "rule": "After a reviewer corrects the reference to PO-4: S1 + PO-4 match; billed unit price 13.00 vs agreed 12.50.",
+      "arithmetic": "expected 10 x 1250 = 12500; billed 10 x 1300 = 13000; 13000 - 12500 = 500; billed qty 10 = ordered 10 = received 10 (RC-4)"
+    },
+    "summary": {
+      "counts": {"reconciled": 1, "discrepant": 3, "duplicate": 1, "unresolved": 2, "failed": 2},
+      "recoverable_cents": 2500,
+      "payable_invoices": 4,
+      "arithmetic": "recoverable = 2000 (wrong-price) + 0 (short-receipt) + 500 (po-typo)"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "about": "The batch: documents in received order. The app reads only these images, never the invoice records used to render them. A 'simulate' value marks a labelled simulated failure (no model call is made).",
+  "documents": [
+    {"file_id": "clean", "image": "tasks/invoices/images/clean.png"},
+    {"file_id": "wrong-price", "image": "tasks/invoices/images/wrong-price.png"},
+    {"file_id": "duplicate", "image": "tasks/invoices/images/duplicate.png"},
+    {"file_id": "missing-reference", "image": "tasks/invoices/images/missing-reference.png"},
+    {"file_id": "short-receipt", "image": "data/images/short-receipt.png"},
+    {"file_id": "supplier-conflict", "image": "data/images/supplier-conflict.png"},
+    {"file_id": "po-typo", "image": "data/images/po-typo.png"},
+    {"file_id": "api-error", "image": "data/images/api-error.png", "simulate": "api_error"},
+    {"file_id": "unreadable", "image": "data/images/unreadable.png"}
+  ]
+}

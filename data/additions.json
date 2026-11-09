@@ -1,0 +1,103 @@
+{
+  "purchase_orders": [
+    {
+      "po_id": "PO-3",
+      "supplier_id": "S1",
+      "sku": "HUB-1",
+      "quantity": 5,
+      "unit_cents": 3500
+    },
+    {
+      "po_id": "PO-4",
+      "supplier_id": "S1",
+      "sku": "ADP-1",
+      "quantity": 10,
+      "unit_cents": 1250
+    },
+    {
+      "po_id": "PO-5",
+      "supplier_id": "S2",
+      "sku": "SW-1",
+      "quantity": 2,
+      "unit_cents": 4500
+    }
+  ],
+  "receipts": [
+    {
+      "receipt_id": "RC-3",
+      "po_id": "PO-3",
+      "sku": "HUB-1",
+      "quantity": 4
+    },
+    {
+      "receipt_id": "RC-4",
+      "po_id": "PO-4",
+      "sku": "ADP-1",
+      "quantity": 10
+    },
+    {
+      "receipt_id": "RC-5",
+      "po_id": "PO-5",
+      "sku": "SW-1",
+      "quantity": 2
+    }
+  ],
+  "invoices": [
+    {
+      "file_id": "short-receipt",
+      "invoice_number": "INV-4",
+      "supplier_id": "S1",
+      "po_id": "PO-3",
+      "sku": "HUB-1",
+      "quantity": 5,
+      "unit_cents": 3500,
+      "total_cents": 17500,
+      "layout": "a"
+    },
+    {
+      "file_id": "supplier-conflict",
+      "invoice_number": "INV-5",
+      "supplier_id": "S2",
+      "po_id": "PO-1",
+      "sku": "CAB-1",
+      "quantity": 5,
+      "unit_cents": 2000,
+      "total_cents": 10000,
+      "layout": "b"
+    },
+    {
+      "file_id": "po-typo",
+      "invoice_number": "INV-6",
+      "supplier_id": "S1",
+      "po_id": "P0-4",
+      "sku": "ADP-1",
+      "quantity": 10,
+      "unit_cents": 1300,
+      "total_cents": 13000,
+      "layout": "a"
+    },
+    {
+      "file_id": "api-error",
+      "invoice_number": "INV-7",
+      "supplier_id": "S2",
+      "po_id": "PO-5",
+      "sku": "SW-1",
+      "quantity": 2,
+      "unit_cents": 4500,
+      "total_cents": 9000,
+      "layout": "b"
+    },
+    {
+      "file_id": "unreadable",
+      "invoice_number": "INV-8",
+      "supplier_id": "S1",
+      "po_id": "PO-3",
+      "sku": "HUB-1",
+      "quantity": 1,
+      "unit_cents": 3500,
+      "total_cents": 3500,
+      "layout": "a",
+      "blur_radius": 14
+    }
+  ]
+}
