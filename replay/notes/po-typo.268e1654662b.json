@@ -1,0 +1,12 @@
+{
+  "label": "live",
+  "recorded_at": "2026-11-09T20:29:02+00:00",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "temperature": 0,
+  "prompt_version": "draft_note_v1",
+  "input_sha256": "268e1654662b0ab07b1c39d45035760f6679663fa601cfea846d2a9f84118033",
+  "response_id": "resp_06f7acf3d5cf8bc4006af22d0bd07087d28bf6ec9ab121f852",
+  "input_tokens": 230,
+  "output_tokens": 65,
+  "output_text": "{\"note\":\"Invoice INV-6 references purchase-order P0-4, but P0-4 is not in the purchase-order table. No purchase order is matched, so there is no expected amount. Please review the invoice reference and confirm the correct purchase order.\"}"
+}

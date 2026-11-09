@@ -15,6 +15,7 @@ from pathlib import Path
 
 from app.extract import Extraction
 from app.models import InvoiceFields
+from app.notes import Note
 from app.reconcile import Finding, ReconResult, Status
 
 SCHEMA = """
@@ -32,7 +33,16 @@ CREATE TABLE IF NOT EXISTS corrections (
 CREATE TABLE IF NOT EXISTS results (
     file_id TEXT PRIMARY KEY, status TEXT NOT NULL, result_json TEXT NOT NULL, computed_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS notes (
+    file_id TEXT PRIMARY KEY, facts_hash TEXT NOT NULL, label TEXT NOT NULL, text TEXT, error TEXT,
+    model TEXT, recorded_at TEXT
+);
+CREATE TABLE IF NOT EXISTS reviews (
+    file_id TEXT PRIMARY KEY, reviewed INTEGER NOT NULL, comment TEXT NOT NULL, updated_at TEXT NOT NULL
+);
 """
+
+TABLES = ("documents", "extractions", "corrections", "results", "notes", "reviews")
 
 FIELD_NAMES = tuple(InvoiceFields.model_fields)
 
@@ -54,7 +64,7 @@ class Store:
 
     def reset(self) -> None:
         """Forget everything, including reviewer corrections."""
-        for table in ("documents", "extractions", "corrections", "results"):
+        for table in TABLES:
             self.db.execute(f"DELETE FROM {table}")
         self.db.commit()
 
@@ -73,7 +83,7 @@ class Store:
     def remove_documents_not_in(self, file_ids: list[str]) -> None:
         for (file_id,) in self.db.execute("SELECT file_id FROM documents").fetchall():
             if file_id not in file_ids:
-                for table in ("documents", "extractions", "corrections", "results"):
+                for table in TABLES:
                     self.db.execute(f"DELETE FROM {table} WHERE file_id = ?", (file_id,))
         self.db.commit()
 
@@ -150,3 +160,29 @@ class Store:
             data["findings"] = [Finding(**f) for f in data["findings"]]
             out.append(ReconResult(**data))
         return out
+
+    # --- draft notes and review state ------------------------------------------------
+
+    def save_note(self, note: Note) -> None:
+        self.db.execute(
+            "INSERT OR REPLACE INTO notes VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (note.file_id, note.facts_hash, note.label, note.text, note.error, note.model, note.recorded_at),
+        )
+        self.db.commit()
+
+    def note(self, file_id: str) -> Note | None:
+        row = self.db.execute("SELECT * FROM notes WHERE file_id = ?", (file_id,)).fetchone()
+        return None if row is None else Note(**dict(row))
+
+    def delete_note(self, file_id: str) -> None:
+        self.db.execute("DELETE FROM notes WHERE file_id = ?", (file_id,))
+        self.db.commit()
+
+    def save_review(self, file_id: str, reviewed: bool, comment: str) -> None:
+        self.db.execute("INSERT OR REPLACE INTO reviews VALUES (?, ?, ?, ?)", (file_id, int(reviewed), comment, _now()))
+        self.db.commit()
+
+    def review(self, file_id: str) -> tuple[bool, str]:
+        """(reviewed, comment); a document nobody has looked at is (False, "")."""
+        row = self.db.execute("SELECT reviewed, comment FROM reviews WHERE file_id = ?", (file_id,)).fetchone()
+        return (False, "") if row is None else (bool(row["reviewed"]), row["comment"])

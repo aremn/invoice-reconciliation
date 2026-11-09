@@ -14,7 +14,9 @@ from pathlib import Path
 
 from app.config import DB_PATH, DOCUMENTS_FILE, REPLAY_DIR, ROOT
 from app.extract import extract_invoice
+from app.insight import build_insight
 from app.money import format_cents
+from app.notes import draft_notes
 from app.reconcile import Finding, ReconResult, Status, reconcile_batch, summarize
 from app.reference import ReferenceData, load_reference
 from app.store import Store
@@ -64,7 +66,9 @@ def run_batch(
             print(f"{doc['file_id']}: the image changed, earlier corrections were dropped")
         # extract_invoice never raises, so one bad document cannot stop the loop.
         store.save_extraction(extract_invoice(doc["file_id"], image_path, mode, doc.get("simulate"), replay_dir))
-    return recompute(store, reference)
+    results = recompute(store, reference)
+    draft_notes(store, results, mode, replay_dir)
+    return results
 
 
 def print_report(store: Store, results: list[ReconResult]) -> None:
@@ -81,6 +85,17 @@ def print_report(store: Store, results: list[ReconResult]) -> None:
     counts = ", ".join(f"{name} {count}" for name, count in summary.counts.items())
     print(f"\n{counts}\nrecoverable overcharges: {format_cents(summary.recoverable_cents)}"
           f"   payable invoices: {summary.payable_invoices}")
+
+    print()
+    print("Draft notes (written by the model from the verified findings; drafts only):")
+    for r in results:
+        note = store.note(r.file_id)
+        if note is not None:
+            print(f"- {r.file_id} [{note.label}]: {note.text or 'NOTE FAILED: ' + note.error}")
+    insight = build_insight(results)
+    if insight is not None:
+        print()
+        print(f"Process insight: {insight.text}")
 
 
 def main() -> None:

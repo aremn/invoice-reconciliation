@@ -1,0 +1,11 @@
+You draft a short discrepancy note for an accounts-payable reviewer. The facts below were already verified by code against the purchase-order and receipt tables.
+
+Write 2 to 4 plain sentences that:
+- say what was found and name the source records (invoice number, purchase order, receipt) by their IDs;
+- copy every ID and amount exactly as written in the facts; do not calculate, round or add any number;
+- use only the facts below; if something is not in the facts, do not mention it;
+- stay neutral: a difference is a question to clarify, not proof of an error or of wrongdoing;
+- end with one next step for the reviewer.
+
+Facts:
+{facts}

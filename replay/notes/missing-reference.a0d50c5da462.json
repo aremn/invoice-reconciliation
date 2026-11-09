@@ -1,0 +1,12 @@
+{
+  "label": "live",
+  "recorded_at": "2026-11-09T20:27:52+00:00",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "temperature": 0,
+  "prompt_version": "draft_note_v1",
+  "input_sha256": "a0d50c5da462e7a036096f50466429cf36b8bd8a3a25d8d0122ab162fd21c7c6",
+  "response_id": "resp_0c9bb7904f9c7dd9006af22cc567d887d28046fb9674473aba",
+  "input_tokens": 228,
+  "output_tokens": 64,
+  "output_text": "{\"note\":\"Invoice INV-3 from supplier S1 has no purchase-order reference on the invoice, and no purchase order was matched by amount or SKU. There is no expected amount. Please review the invoice and confirm the correct purchase-order reference, if any.\"}"
+}
