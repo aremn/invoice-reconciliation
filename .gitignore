@@ -15,3 +15,7 @@ starter/brief-B.txt
 
 # Local Claude Code settings (personal)
 .claude/settings.local.json
+
+# Local review state (SQLite)
+state/
+.pytest_tmp/
