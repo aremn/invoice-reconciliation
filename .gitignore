@@ -1,0 +1,17 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Assignment materials that should not be published
+starter/assignment-brief.html
+starter/brief-B.txt
+
+# Local Claude Code settings (personal)
+.claude/settings.local.json
