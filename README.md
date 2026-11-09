@@ -33,7 +33,20 @@ Run the batch (extract → validate → match → calculate → save to SQLite �
 Each row is labelled `live`, `replayed` or `simulated-failure`. State is kept in
 `state/review.sqlite` (not committed; set `INVOICE_DB` to use another file).
 
-TODO: the review app.
+The batch output also prints the draft discrepancy notes and one process insight.
+
+Review app (queue with status filters, invoice image beside the extracted fields, matched records,
+calculation, draft note, correction form, review state):
+
+```bash
+.venv/Scripts/python -m streamlit run app/ui.py
+```
+
+Press **Run batch** in the sidebar (replay by default). To see the correction flow: choose
+`po-typo`, compare the image (`P0-4`, digit zero) with the extracted `PO-4`, type `P0-4` into
+"Purchase order" and press **Save correction and rerun**. The status becomes `unresolved`, the
+recoverable total goes from $25.00 to $20.00, the original extraction stays visible, and the
+state is still there after the app is restarted.
 
 Change an input and rerun: edit or add an invoice record in `data/additions.json`, add it to
 `data/documents.json`, then
@@ -54,10 +67,35 @@ Every successful model response is saved as it was returned in `replay/extract/<
 run without a key. `api-error` has no saved response on purpose: it is a simulated failure and
 is labelled so. `replay/history/` keeps responses from prompt versions that were tried and dropped.
 
+Draft notes are saved the same way in `replay/notes/<file_id>.<hash of the facts>.json`. The facts
+are part of the file name, so `po-typo` has two saved notes: one for the extracted `PO-4` and one
+for the corrected `P0-4`. A correction that produces facts with no saved note shows
+"no saved response" in replay mode instead of an old or invented note; live mode drafts a new one.
+
 ## Architecture
 
-TODO: flow diagram (images → extraction → validation → matching → calculation → notes → review queue)
-and a short description of each module.
+```
+invoice images ──> extract.py ──> Pydantic validation ──> store.py (SQLite: original extraction)
+                   (model reads)   (text → integer cents)        │  + reviewer corrections
+                                                                 ▼
+reference data ──> reference.py ──────────────────────> reconcile.py (code only: match by
+(POs, receipts)                                          supplier_id + po_id, amounts, duplicates)
+                                                                 │
+                                    notes.py <── verified facts ─┤──> insight.py (counts causes)
+                                    (model drafts a note,        ▼
+                                     code checks it)      ui.py review queue ──> correction ──> rerun
+```
+
+| Module | What it does |
+|---|---|
+| `app/llm.py` | The only provider call. Live (saves the response), replay (reads it, refuses a response recorded for another input), simulated failure. Never raises. |
+| `app/extract.py` | Image → model → strict JSON → `InvoiceFields` in integer cents, or a readable error. |
+| `app/reconcile.py` | Pure functions: matching, expected amount, quantity checks, duplicates, statuses, totals. No model, no I/O. |
+| `app/notes.py` | Builds the verified facts for a document, asks the model for a 2–4 sentence draft, rejects a draft that contains an ID or number not in the facts. |
+| `app/insight.py` | Counts documents per cause of finding and prints the most frequent one with a suggestion. No model. |
+| `app/store.py` | SQLite: documents, original extractions, corrections (separate rows), results, notes, review state. |
+| `app/run.py` | Batch command; `recompute` is reused by the review app after every correction. |
+| `app/ui.py` | Streamlit review queue. Shows only what is stored and what `reconcile.py` calculated. |
 
 ## Model configuration
 
@@ -66,6 +104,8 @@ and a short description of each module.
 - The model returns the seven fields as printed text or `null`. Numbers are converted in code.
 - Prompt: `prompts/extract_invoice_v1.txt`. `extract_invoice_v2.txt` was tried and dropped (see `docs/DEVLOG.md`, day 2).
 - Only `app/llm.py` talks to the provider. Settings are in `app/config.py`.
+- Notes: `prompts/draft_note_v1.txt`, same model and temperature, JSON schema `{"note": string}`.
+  The model sees only facts already verified in code and its text is checked against them.
 
 ## Data
 
@@ -112,6 +152,7 @@ covered by `tests/test_reconcile.py`):
 | 2026-11-09 | Project folder and `CLAUDE.md` drafted with Claude (separate session) | TODO |
 | 2026-11-09 | Brief, environment, model probe, `reconcile.py` + tests (see `docs/DEVLOG.md`) | ~0.5 h |
 | 2026-11-10 | Added data + answer key, extraction with replay, SQLite store, batch run, tests | ~0.5 h |
+| 2026-11-10 | Draft notes with a code check, process insight, review app with correction flow, tests | ~0.5 h |
 
 Total: TODO (limit: 8 hours)
 
@@ -121,6 +162,14 @@ Total: TODO (limit: 8 hours)
   returns `PO-4`, with both prompt versions, with image detail `auto` and `high`, and with the larger
   `gpt-5.4`. The app then matches PO-4 without any warning. Only a reviewer comparing the image with
   the extracted fields catches it. Details: `docs/DEVLOG.md`, day 2.
+- **The note check is a simple text check.** It rejects a draft with an ID or number that is not in
+  the verified facts. It does not check the meaning of the sentences, so a note is always shown as
+  a draft for the reviewer, never as a decision.
+- **Replay covers only recorded inputs.** A correction other than the documented one (`po-typo` →
+  `P0-4`) changes the facts, and in replay mode the note is then shown as "no saved response".
+  Statuses and amounts are still recalculated, because they do not need the model.
+- **The process insight is a count on nine documents.** It shows the most frequent cause in this
+  batch, not a trend.
 - TODO (rest)
 
 ## LLM usage

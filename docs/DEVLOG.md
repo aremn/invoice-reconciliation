@@ -94,3 +94,45 @@ responses for replay; batch run into SQLite.
 
 **Next:** discrepancy notes drafted by the model from verified findings, the Streamlit review queue
 with the correction flow, the process-improvement insight, check results, `ai-workflow/` records.
+
+## Day 3 — 2026-11-10: draft notes, process insight, review app
+
+**Done**
+- `app/notes.py` + `prompts/draft_note_v1.txt`: for every `discrepant`, `duplicate` and `unresolved`
+  document the code builds a list of verified facts (status, source IDs, amounts, findings) and the
+  model writes a 2–4 sentence draft from them. After the answer the code checks that every ID and
+  number in the draft is also in the facts; otherwise the draft is rejected and the error is shown.
+  7 real responses saved in `replay/notes/` (6 documents + `po-typo` after the correction).
+- `app/insight.py`: counts documents per cause of finding, no model. On this batch: PO reference
+  problems, 2 of 9 documents before the `po-typo` correction and 3 of 9 after it.
+- `app/store.py`: tables for notes and review state (reviewed + comment).
+- `app/ui.py`: Streamlit review queue — status filter, image beside original and current fields,
+  correction form → recalculation, matched PO and receipt, calculation in cents, findings, draft
+  note, corrections history, raw model response, review state.
+- `tests/test_notes_ui.py`: note check, replayed notes, insight, and a page test that runs the
+  batch, corrects `po-typo`, marks it reviewed and opens the page again on the same database.
+  54 tests pass; none calls the model. The app was also opened once in a browser in replay mode.
+
+**What did not work / fixes**
+1. *My note check rejected two correct notes.* The first replay showed "NOTE FAILED" for
+   `wrong-price` and `duplicate`: "values that are not in the verified facts: 2," and "1,". The
+   model was right; the number pattern in `check_note` took the comma after a number as part of
+   the number ("2," is not in the facts, "2" is). Fixed the pattern (a comma only counts between
+   groups of three digits) and added tests for accepted and rejected notes. No model call was repeated.
+2. *The page test failed with `StopIteration`.* The test patched `app.ui.DB_PATH`, which imports
+   `app/ui.py` as a normal module and runs the whole page outside Streamlit. Removed that line; the
+   test now sets only `INVOICE_DB` / `app.config.DB_PATH`.
+3. *Streamlit warned that `use_container_width` is deprecated.* Replaced with `width="stretch"`.
+4. *A second live batch run re-recorded `replay/extract/`.* The extracted fields are the same as
+   in the first run; only time and response id changed. Committed as the current recordings.
+
+**Decisions**
+- The facts are part of a note's file name and are stored with the note. If the findings change
+  after a correction, the old note is not shown: the app drafts a new one (live) or says there is
+  no saved response (replay).
+- An unresolved document's facts say "there is no expected amount" and name no purchase order, so
+  the note cannot suggest a match.
+- The insight text says it is a count on a small simulated batch and not proof of wrongdoing.
+
+**Next:** check-results table, `ai-workflow/` records, walkthrough, README limitations and total
+time, run from a fresh clone, secret scan.

@@ -87,5 +87,5 @@ effect was checked. So:
 - Model: `gpt-5.4-mini-2026-03-17`, temperature 0 (key in `.env` as `OPENAI_API_KEY`, never committed)
 - Batch run: `.venv/Scripts/python -m app.run --mode replay` (no key) or `--mode live` (re-records `replay/`); `--reset` drops reviewer corrections.
 - Answer-key check: `.venv/Scripts/python scripts/check_expected.py`
-- Review app: to be added.
+- Review app: `.venv/Scripts/python -m streamlit run app/ui.py` (page test: `tests/test_notes_ui.py`, uses `INVOICE_DB`).
 - Keep `docs/DEVLOG.md` updated per working session: what was done, what failed and why, the fix.
