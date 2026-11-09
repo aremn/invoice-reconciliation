@@ -8,11 +8,21 @@ inspect, correct and re-run.
 
 ## Setup
 
-TODO: Python version, install command, environment variables (`.env.example`).
+Python 3.11.
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements.txt   # on Linux/macOS: .venv/bin/python
+cp .env.example .env   # then set OPENAI_API_KEY (only needed for live model calls)
+```
 
 ## Run
 
-TODO: run the app, run the batch, run the tests.
+```bash
+.venv/Scripts/python -m pytest -q
+```
+
+TODO: run the batch and the review app.
 
 ## Replay without an API key
 
@@ -35,11 +45,21 @@ TODO: provider, model ID, temperature, structured-output mode, prompts location.
 
 ## Assumptions and ambiguities
 
-TODO: every case the rules do not cover and the behaviour chosen. Candidates noticed so far:
+Cases the supplied rules do not settle, and the behaviour chosen (implemented in `app/reconcile.py`,
+covered by `tests/test_reconcile.py`):
 
-- Which of two invoices with the same `supplier_id` + `invoice_number` is the original and which is the duplicate.
-- Billed quantity equals ordered quantity, but fewer items were received: the amount difference is 0,
-  yet quantities disagree. Which status should this get?
+| # | Case | Chosen behaviour |
+|---|---|---|
+| 1 | Two invoices share `supplier_id` + `invoice_number`: which is the original? | The first one in received order (order of the input list) is the original; later copies are `duplicate`. |
+| 2 | Billed quantity ≠ received (or ordered) quantity, but the amount difference is 0 | `discrepant` with a quantity finding and `difference_cents = 0`; it adds nothing to the recoverable total. |
+| 3 | No receipt for the matched PO | Received quantity is 0 → quantity finding → `discrepant`. |
+| 4 | Invoice SKU differs from the PO SKU | Treated as a conflicting reference → `unresolved`, no expected amount. |
+| 5 | Invoice disagrees with itself (`quantity × unit price ≠ total`) | `unresolved` with a "check the extracted values" finding. Most likely an extraction error; a reviewer correction re-runs reconciliation. |
+| 6 | Billed less than expected (negative difference) | `discrepant` (undercharge), never added to the recoverable total. |
+| 7 | Supplier ID or invoice number missing | `unresolved`; a duplicate check is impossible without both. |
+| 8 | Formatting of IDs (`po-2 ` vs `PO-2`) | IDs are compared ignoring case and surrounding spaces. |
+| 9 | What counts as payable | `reconciled` and `discrepant` invoices. `duplicate`, `unresolved` and `failed` do not. |
+| 10 | Rounding | None. Amounts are parsed with `Decimal`; fractions of a cent are rejected as invalid extraction. All arithmetic is integer cents. |
 
 ## Check results (minimum demonstration)
 
@@ -56,6 +76,7 @@ TODO: every case the rules do not cover and the behaviour chosen. Candidates not
 | Date | Work | Time |
 |---|---|---|
 | 2026-11-09 | Project folder and `CLAUDE.md` drafted with Claude (separate session) | TODO |
+| 2026-11-09 | Brief, environment, model probe, `reconcile.py` + tests (see `docs/DEVLOG.md`) | ~0.5 h |
 
 Total: TODO (limit: 8 hours)
 
