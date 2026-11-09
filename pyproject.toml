@@ -1,0 +1,9 @@
+[project]
+name = "invoice-reconciliation"
+version = "0.1.0"
+description = "Take-home B: invoice extraction, matching and reconciliation review queue"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
