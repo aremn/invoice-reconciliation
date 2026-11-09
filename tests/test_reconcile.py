@@ -10,7 +10,10 @@ import pytest
 
 from app.models import InvoiceFields
 from app.reconcile import Status, find_duplicates, reconcile_batch, reconcile_invoice, summarize
-from app.reference import DATA_DIR, load_reference
+from app.config import ROOT
+from app.reference import load_reference
+
+DATA_DIR = ROOT / "tasks" / "invoices"
 
 REF = load_reference()
 FIELDS = list(InvoiceFields.model_fields)

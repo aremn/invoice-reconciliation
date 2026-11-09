@@ -1,0 +1,17 @@
+You are reading one supplier invoice image for an accounts-payable check.
+
+Return these fields, copied exactly as they are printed on the invoice:
+- invoice_number: the invoice number
+- supplier_id: the supplier identifier
+- po_id: the purchase-order reference
+- sku: the item / SKU code
+- quantity: the billed quantity
+- unit_price: the unit price
+- total: the invoice total
+
+Rules:
+- Copy the characters exactly as printed. Do not correct, normalise or complete a value, even when it looks like a typo.
+- Identifiers mix letters and digits. Read them one character at a time: the digit 0 and the letter O are different characters, and so are the digit 1 and the letter I. Report the character that is printed, even when the result does not look like a usual reference.
+- If a field is not printed, is marked as missing, or cannot be read with confidence, return null for it. Never guess, and never work out one field from the others.
+- Do not calculate anything. Return quantity, unit_price and total as the printed text (for example "24.00").
+- If the image is not a readable invoice, return null for every field.
