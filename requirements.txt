@@ -2,5 +2,5 @@ openai>=1.50
 pydantic>=2.7
 python-dotenv>=1.0
 Pillow>=10.3
-streamlit>=1.38
+streamlit>=1.67.0
 pytest>=8.0
