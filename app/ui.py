@@ -5,8 +5,8 @@ Run:  streamlit run app/ui.py
 Written for a reviewer who is not a programmer. There are two screens:
 
   1. the list   - every invoice as one row: who, one sentence about the result, an Open button;
-  2. one invoice - the picture next to what was read from it, then a table that puts the
-                   invoice, our order and the delivery side by side.
+  2. one invoice - the picture next to what was read from it, then a table that compares the
+                   invoice with our records line by line, then one button: checked, next.
 
 The page only shows what is saved in SQLite and what app/reconcile.py calculated. When the
 reviewer corrects a value it is saved, everything is recalculated, and the page is drawn again.
@@ -36,7 +36,7 @@ LABELS = {
 }
 MONEY_FIELDS = ("unit_cents", "total_cents")
 
-# Plain name and badge colour for each status.
+# Plain name and colour for each status.
 STATUS_NAMES = {
     "reconciled": ("All good", "green"),
     "discrepant": ("Does not match", "orange"),
@@ -44,6 +44,7 @@ STATUS_NAMES = {
     "unresolved": ("Order not found", "blue"),
     "failed": ("Could not read", "red"),
 }
+# Invoices with something to look at come first, the ones without problems last.
 SHOW_ORDER = ["discrepant", "unresolved", "duplicate", "failed", "reconciled"]
 
 
@@ -91,6 +92,17 @@ def verdict(result: ReconResult) -> str:
     return "The amount is right, but the quantity does not match what was delivered or ordered."
 
 
+def show_verdict(result: ReconResult) -> None:
+    """The verdict as one coloured line: green = fine, yellow = look at it, red = could not read."""
+    text = f"**{STATUS_NAMES[result.status.value][0]}.** {verdict(result)}"
+    if result.status is Status.RECONCILED:
+        st.success(text)
+    elif result.status is Status.FAILED:
+        st.error(text)
+    else:
+        st.warning(text)
+
+
 def title_of(file_id: str, fields) -> str:
     """How an invoice is called on the page: its number and supplier when they could be read."""
     if fields is None or not fields.invoice_number:
@@ -106,7 +118,6 @@ mode = "live" if st.session_state.get("ask_model_again") else "replay"
 
 if not store.results():  # first start: check everything with the saved model answers
     run_batch("replay", store)
-# Invoices with something to look at come first, the ones without problems last.
 # The same order is used by the list and by the Previous / Next buttons.
 results = sorted(store.results(), key=lambda r: SHOW_ORDER.index(r.status.value))
 by_id = {r.file_id: r for r in results}
@@ -118,8 +129,9 @@ opened = st.session_state.get("opened")
 # ====================================================================================
 if opened not in by_id:
     summary = summarize(results)
+    checked = sum(1 for r in results if store.review(r.file_id)[0])
     st.title("Invoices")
-    st.write("Each invoice was compared with our order and with what was delivered. Open one to see why.")
+    st.caption(f"{len(results)} invoices were compared with our orders and deliveries. You checked {checked} of them.")
 
     with st.container(horizontal=True):
         st.metric("Overcharged in total", format_cents(summary.recoverable_cents), border=True,
@@ -128,7 +140,7 @@ if opened not in by_id:
                   help="Invoices matched to an order. Invoices sent twice, unread or without an order are not counted.")
 
     show = st.pills(
-        "Show", ["all"] + SHOW_ORDER, default="all",
+        "Show", ["all"] + SHOW_ORDER, default="all", label_visibility="collapsed",
         format_func=lambda s: f"All ({len(results)})" if s == "all" else f"{STATUS_NAMES[s][0]} ({summary.counts[s]})",
     )
     for result in results:
@@ -142,9 +154,9 @@ if opened not in by_id:
                     st.markdown(f"**{title_of(result.file_id, store.effective_fields(result.file_id))}**")
                     st.badge(name, color=colour)
                     if store.review(result.file_id)[0]:
-                        st.badge("checked by you", color="gray")
-                st.write(verdict(result))
-            if button.button("Open", key=f"open-{result.file_id}"):
+                        st.badge("checked", icon=":material/check:", color="gray")
+                st.caption(verdict(result))
+            if button.button("Open", key=f"open-{result.file_id}", width="stretch"):
                 st.session_state["opened"] = result.file_id
                 st.rerun()
 
@@ -174,117 +186,118 @@ extraction = store.extraction(file_id)
 current = store.effective_fields(file_id)
 document = next(d for d in store.documents() if d["file_id"] == file_id)
 corrections = store.corrections(file_id)
-name, colour = STATUS_NAMES[result.status.value]
+reviewed, comment = store.review(file_id)
 
-# --- moving between invoices without going back to the list --------------------------
+# --- top row: moving between invoices without going back to the list -----------------
 position = results.index(result)
 previous_id = results[position - 1].file_id if position > 0 else None
 next_id = results[position + 1].file_id if position + 1 < len(results) else None
 with st.container(horizontal=True, vertical_alignment="center"):
-    if st.button("All invoices", key="back"):
+    if st.button("All invoices", key="back", icon=":material/list:"):
         del st.session_state["opened"]
         st.rerun()
-    if st.button("< Previous", key="previous", disabled=previous_id is None):
+    if st.button("Previous", key="previous", icon=":material/arrow_back:", disabled=previous_id is None):
         st.session_state["opened"] = previous_id
         st.rerun()
-    if st.button("Next >", key="next", disabled=next_id is None):
+    if st.button("Next", key="next", icon=":material/arrow_forward:", disabled=next_id is None):
         st.session_state["opened"] = next_id
         st.rerun()
-    st.write(f"Invoice {position + 1} of {len(results)}")
+    st.caption(f"{position + 1} of {len(results)}" + ("  -  you already checked this one" if reviewed else ""))
 
-st.title(title_of(file_id, current))
-st.badge(name, color=colour)
-st.subheader(verdict(result))
+st.header(title_of(file_id, current))
+show_verdict(result)
 
-# --- step 1: is the invoice read correctly? -----------------------------------------
-st.markdown("#### Step 1. Was the invoice read correctly?")
-st.write("On the left is the invoice. On the right is what the computer read from it. They must be the same.")
-left, right = st.columns([3, 2])
-with left:
-    image_path = ROOT / document["image"]
-    if image_path.exists():
-        st.image(str(image_path), width="stretch")
-    else:
-        st.error(f"Picture not found: {document['image']}")
-with right:
-    if extraction.error:
-        st.error(f"The computer could not read this document: {extraction.error}")
-    with st.form(f"correct-{file_id}"):
-        typed = {
-            field: st.text_input(LABELS[field], value=to_text(field, getattr(current, field)) if current else "",
-                                 key=f"{file_id}-{field}")
-            for field in FIELD_NAMES
-        }
-        st.caption("Not the same as on the invoice? Type what the invoice says and press the button.")
-        if st.form_submit_button("Save and check again"):
-            try:
-                new_values = {field: from_text(field, text) for field, text in typed.items()}
-                changed = {field: value for field, value in new_values.items()
-                           if value != (getattr(current, field) if current else None)}
-                for field, value in changed.items():
-                    store.add_correction(file_id, field, value)
-            except ValueError as exc:
-                st.error(f"Not saved: {exc}")
-            else:
-                if changed:
-                    draft_notes(store, recompute(store, reference), mode, only_changed=True)
-                    st.rerun()
-                st.info("Nothing was changed.")
-if corrections:
-    st.write("You corrected:")
-    st.table([{
-        "what": LABELS[c["field"]],
-        "the computer read": to_text(c["field"], json.loads(c["old_value"])),
-        "you corrected to": to_text(c["field"], json.loads(c["new_value"])),
-    } for c in corrections])
-
-# --- step 2: the comparison ---------------------------------------------------------
-st.markdown("#### Step 2. Does it match our records?")
-if result.expected_cents is not None:
-    order = next(po for po in reference.purchase_orders if po.po_id == result.po_id)
-    st.write(f"Each line compares the invoice with what we have for order {order.po_id}.")
-    lines = [
-        ("Item", current.sku, order.sku, "what we ordered"),
-        ("Price per unit", money(current.unit_cents), money(result.agreed_unit_cents), "the price we agreed"),
-        ("Quantity", str(current.quantity), str(result.ordered_qty), "how many we ordered"),
-        ("Quantity", str(current.quantity), str(result.received_qty), "how many actually arrived"),
-        ("Total to pay", money(result.billed_cents), money(result.expected_cents), "ordered quantity x agreed price"),
-    ]
-    st.table([{
-        "": what,
-        "the invoice says": on_invoice,
-        "we have": f"{ours} - {meaning}",
-        "same?": "yes" if on_invoice.strip().lower() == ours.strip().lower() else "NO",
-    } for what, on_invoice, ours, meaning in lines])
-    st.write(f"Difference in the total: **{format_cents(result.difference_cents)}**")
-for finding in result.findings:
-    st.write(f"- {finding.message}")
-if not result.findings:
-    st.write("No problems found.")
-
-note = store.note(file_id)
-if note is not None:
-    st.markdown("#### Suggested message about this invoice")
-    st.caption("A draft written by the computer from the facts above. Read it before you use it.")
-    if note.error:
-        st.warning(f"No draft is available: {note.error}")
-    elif current is not None and note.facts_hash != facts_hash(result, current):
-        st.warning("The result changed after this draft was written. Use 'Read all invoices again' in Settings.")
-    else:
-        st.info(note.text)
-
-# --- step 3: done -------------------------------------------------------------------
-st.markdown("#### Step 3. Finished with this invoice?")
-reviewed, comment = store.review(file_id)
-with st.form(f"review-{file_id}"):
-    new_reviewed = st.checkbox("I checked this invoice", value=reviewed, key=f"{file_id}-reviewed")
-    new_comment = st.text_input("Comment (optional)", value=comment, key=f"{file_id}-comment")
-    if st.form_submit_button("Save and open the next invoice", type="primary"):
-        store.save_review(file_id, new_reviewed, new_comment)
-        if next_id is None:
-            del st.session_state["opened"]  # that was the last one: back to the list
+# --- 1. is the invoice read correctly? ----------------------------------------------
+with st.container(border=True):
+    st.subheader("1. Was the invoice read correctly?")
+    st.caption("Left: the invoice. Right: what the computer read from it. If a box is wrong, type what the invoice says.")
+    left, right = st.columns([3, 2])
+    with left:
+        image_path = ROOT / document["image"]
+        if image_path.exists():
+            st.image(str(image_path), width="stretch")
         else:
+            st.error(f"Picture not found: {document['image']}")
+    with right:
+        if extraction.error:
+            st.error(f"The computer could not read this document: {extraction.error}")
+        with st.form(f"correct-{file_id}", border=False):
+            typed = {
+                field: st.text_input(LABELS[field], value=to_text(field, getattr(current, field)) if current else "",
+                                     key=f"{file_id}-{field}")
+                for field in FIELD_NAMES
+            }
+            if st.form_submit_button("Save and check again"):
+                try:
+                    new_values = {field: from_text(field, text) for field, text in typed.items()}
+                    changed = {field: value for field, value in new_values.items()
+                               if value != (getattr(current, field) if current else None)}
+                    for field, value in changed.items():
+                        store.add_correction(file_id, field, value)
+                except ValueError as exc:
+                    st.error(f"Not saved: {exc}")
+                else:
+                    if changed:
+                        draft_notes(store, recompute(store, reference), mode, only_changed=True)
+                        st.rerun()
+                    st.info("Nothing was changed.")
+    if corrections:
+        st.caption("You corrected:")
+        st.table([{
+            "what": LABELS[c["field"]],
+            "the computer read": to_text(c["field"], json.loads(c["old_value"])),
+            "you corrected to": to_text(c["field"], json.loads(c["new_value"])),
+        } for c in corrections])
+
+# --- 2. the comparison --------------------------------------------------------------
+with st.container(border=True):
+    st.subheader("2. Does it match our records?")
+    if result.expected_cents is not None:
+        order = next(po for po in reference.purchase_orders if po.po_id == result.po_id)
+        lines = [
+            ("Item", current.sku, order.sku, "what we ordered"),
+            ("Price per unit", money(current.unit_cents), money(result.agreed_unit_cents), "the price we agreed"),
+            ("Quantity", str(current.quantity), str(result.ordered_qty), "how many we ordered"),
+            ("Quantity", str(current.quantity), str(result.received_qty), "how many actually arrived"),
+            ("Total to pay", money(result.billed_cents), money(result.expected_cents), "ordered quantity x agreed price"),
+        ]
+        st.table([{
+            "": what,
+            "the invoice says": on_invoice,
+            f"our records (order {order.po_id})": f"{ours} - {meaning}",
+            "same?": "✅ yes" if on_invoice.strip().lower() == ours.strip().lower() else "❌ no",
+        } for what, on_invoice, ours, meaning in lines])
+        st.markdown(f"Difference in the total: **{format_cents(result.difference_cents)}**")
+    for finding in result.findings:
+        st.markdown(f"- {finding.message}")
+    if not result.findings:
+        st.write("No problems found.")
+
+    note = store.note(file_id)
+    if note is not None:
+        st.divider()
+        st.markdown("**Suggested message** - a draft written by the computer from the facts above. Read it before you use it.")
+        if note.error:
+            st.warning(f"No draft is available: {note.error}")
+        elif current is not None and note.facts_hash != facts_hash(result, current):
+            st.warning("The result changed after this draft was written. Use 'Read all invoices again' in Settings.")
+        else:
+            st.info(note.text)
+
+# --- 3. done ------------------------------------------------------------------------
+# Pressing the button is the check mark: it saves "checked" with the comment and opens the next invoice.
+with st.form(f"review-{file_id}"):
+    st.subheader("3. Done")
+    new_comment = st.text_input("Comment (optional)", value=comment, key=f"{file_id}-comment")
+    with st.container(horizontal=True):
+        done = st.form_submit_button("Checked - next invoice", type="primary", icon=":material/check:")
+        undo = st.form_submit_button("Not checked yet") if reviewed else False
+    if done or undo:
+        store.save_review(file_id, bool(done), new_comment)
+        if done and next_id is not None:
             st.session_state["opened"] = next_id
+        elif done:
+            del st.session_state["opened"]  # that was the last one: back to the list
         st.rerun()
 
 # --- technical details, for inspecting a failure -------------------------------------

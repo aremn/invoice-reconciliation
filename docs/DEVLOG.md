@@ -197,3 +197,11 @@ screens in the browser.
 4. The comparison table had a "delivered" column that was empty in three rows of four and nobody
    understood it. Now every line compares one thing on the invoice with one thing in our records,
    says in words what that thing is, and ends with "yes" or "NO".
+
+**Polish after the second round of feedback.** The invoice screen felt scattered: a label, then a
+line of text, then steps with no visual grouping, and a tick box "I checked this invoice" next to
+a Save button (two actions for one thing). Now the result is one coloured line under the invoice
+name (green / yellow / red), each step is its own framed block, the comparison table marks every
+line with a green or red sign, and step 3 is a comment box with one button, "Checked - next
+invoice". Pressing it is the check mark. "Not checked yet" appears only on an invoice that was
+already checked. Checked in the browser on both screens; 54 tests pass.

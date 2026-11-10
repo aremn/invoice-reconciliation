@@ -71,13 +71,12 @@ def test_review_page_correction_flow(tmp_path, monkeypatch):
     assert {m.label: m.value for m in page.metric}["Overcharged in total"] == "$25.00"
 
     page.button(key="open-po-typo").click().run()  # open one invoice
-    assert not page.exception and "more than we agreed" in page.subheader[0].value
+    assert not page.exception and "more than we agreed" in page.warning[0].value
     page.text_input(key="po-typo-po_id").set_value("P0-4")
     next(b for b in page.button if b.label == "Save and check again").click().run()
-    assert not page.exception and "cannot find the order" in page.subheader[0].value
+    assert not page.exception and "cannot find the order" in page.warning[0].value
 
-    page.checkbox(key="po-typo-reviewed").check()
-    next(b for b in page.button if b.label == "Save and open the next invoice").click().run()
+    next(b for b in page.button if b.label == "Checked - next invoice").click().run()
     assert not page.exception  # the next invoice is open now
 
     page.button(key="back").click().run()  # back to the list

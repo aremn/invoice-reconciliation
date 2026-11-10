@@ -50,13 +50,14 @@ It is written for a reviewer who is not a programmer and has two screens, like a
 2. **One invoice** (button **Open**). Step 1: the invoice picture next to what was read from it;
    the same boxes are the correction form. Step 2: a table where each line compares the invoice
    with our records (item, agreed price, ordered quantity, delivered quantity, total) and says
-   "yes" or "NO", then the difference, what was found and the draft note. Step 3: "I checked this
-   invoice". Model labels, status codes, cents and the raw model response are folded into
+   yes or no, then the difference, what was found and the draft note. Step 3: an optional comment
+   and one button, **Checked - next invoice**, which saves the review state and opens the next
+   invoice. Model labels, status codes, cents and the raw model response are folded into
    "Technical details" at the bottom.
 
 Invoices with something to look at come first (does not match, order not found, sent twice, could
-not read), the ones without problems last. **Previous** / **Next** and **Save and open the next
-invoice** move through them in that order without going back to the list.
+not read), the ones without problems last. **Previous** / **Next** and **Checked - next invoice**
+move through them in that order without going back to the list.
 
 The words on the page and the statuses of the brief:
 
