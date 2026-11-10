@@ -35,18 +35,20 @@ Each row is labelled `live`, `replayed` or `simulated-failure`. State is kept in
 
 The batch output also prints the draft discrepancy notes and one process insight.
 
-Review app. The page reads top to bottom: batch summary, queue with a status filter, then one
-document in numbered cards - 1. the invoice image, 2. what the model read (this is also the
-correction form), 3. our purchase order and receipt, 4. the calculation, findings and draft note,
-5. review state:
+Review app. It is written for a reviewer who is not a programmer: plain words on the page, the
+status codes in brackets, technical details folded away at the bottom. It reads top to bottom:
+summary, list of invoices with a status filter, then one invoice in numbered cards - 1. the invoice
+picture, 2. what was read from it (this is also the correction form), 3. our order and delivery
+records, 4. the check (expected, billed, difference, what was found, draft note), 5. "I checked
+this invoice":
 
 ```bash
 .venv/Scripts/python -m streamlit run app/ui.py
 ```
 
-Press **Run batch** in the sidebar (replay by default). To see the correction flow: choose
+Press **Check all invoices** in the sidebar (saved answers by default). To see the correction flow: choose
 `po-typo`, compare the image (`P0-4`, digit zero) with the extracted `PO-4`, type `P0-4` into
-"Purchase order" and press **Save correction and rerun**. The status becomes `unresolved`, the
+"Order number (PO)" and press **Save and check again**. The status becomes `unresolved`, the
 recoverable total goes from $25.00 to $20.00, the original extraction stays visible, and the
 state is still there after the app is restarted.
 

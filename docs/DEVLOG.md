@@ -166,3 +166,13 @@ table and totals (recoverable $25.00, 4 payable), all notes are accepted, `scrip
 
 **Left for me before sending:** hand-check the five cases in `docs/reference-cases.md`, click
 through the app, fill the total time in the README.
+
+**Later the same day: plain words on the review page.** The people who review invoices are not
+programmers, and the page still spoke in codes (`discrepant`, `unit_price_mismatch`, cents, model
+and prompt names). Changed the wording only, no logic: each status has a plain name with the code
+in brackets ("No order found (unresolved)"), one sentence under the invoice name says what is wrong
+("The invoice is $20.00 higher than we agreed."), amounts are in dollars, our records have readable
+column names, buttons say what they do ("Check all invoices", "Save and check again"), and model
+labels, cents, finding codes and the raw response moved into one "Technical details" section.
+Seen in the browser at a narrow width: seven numbers in one row were cut to "Matc...", "Over...";
+the row now wraps. The page test was updated to the new labels and passes (54 tests).

@@ -22,7 +22,7 @@ reviewer a queue with the evidence.
 
 ## The flow
 
-1. `python -m app.run --mode replay` (or **Run batch** in the app) reads `data/documents.json`.
+1. `python -m app.run --mode replay` (or **Check all invoices** in the app) reads `data/documents.json`.
 2. Each image goes to the model (`app/extract.py` through `app/llm.py`). In replay mode the saved
    real answer from `replay/` is used instead, so no key is needed.
 3. The original extraction is saved in SQLite (`app/store.py`) and is never changed afterwards.
@@ -88,5 +88,5 @@ After the reviewer correction of `po-typo`: recoverable $20.00, 3 payable invoic
 .venv/Scripts/python -m streamlit run app/ui.py
 ```
 
-In the app: **Run batch** → choose `po-typo` → compare card 1 with card 2 → type `P0-4` into
-"Purchase order" → **Save correction and rerun** → restart the app and look again.
+In the app: **Check all invoices** → choose `po-typo` → compare card 1 with card 2 → type `P0-4` into
+"Order number (PO)" → **Save and check again** → restart the app and look again.

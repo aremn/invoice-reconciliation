@@ -67,23 +67,23 @@ def test_review_page_correction_flow(tmp_path, monkeypatch):
 
     page = AppTest.from_file(str(ROOT / "app" / "ui.py"), default_timeout=30).run()
     assert not page.exception and "No results yet" in page.info[0].value
-    page.button[0].click().run()  # Run batch (replay)
+    page.button[0].click().run()  # Check all invoices (saved answers)
     assert not page.exception
-    assert {m.label: m.value for m in page.metric}["recoverable overcharges"] == "$25.00"
+    assert {m.label: m.value for m in page.metric}["Overcharged in total"] == "$25.00"
 
     page.selectbox[0].select("po-typo").run()
     page.text_input(key="po-typo-po_id").set_value("P0-4")
-    next(b for b in page.button if b.label == "Save correction and rerun").click().run()
+    next(b for b in page.button if b.label == "Save and check again").click().run()
     assert not page.exception
     metrics = {m.label: m.value for m in page.metric}
-    assert (metrics["recoverable overcharges"], metrics["unresolved"], metrics["payable invoices"]) == ("$20.00", "3", "3")
+    assert (metrics["Overcharged in total"], metrics["No order found"], metrics["Invoices that can be paid"]) == ("$20.00", "3", "3")
 
     page.checkbox(key="po-typo-reviewed").check()
-    next(b for b in page.button if b.label == "Save review state").click().run()
+    next(b for b in page.button if b.label == "Save").click().run()
 
     # A new page on the same database file = the app after a restart.
     restarted = AppTest.from_file(str(ROOT / "app" / "ui.py"), default_timeout=30).run()
-    assert {m.label: m.value for m in restarted.metric}["recoverable overcharges"] == "$20.00"
+    assert {m.label: m.value for m in restarted.metric}["Overcharged in total"] == "$20.00"
     store = Store(db)
     assert store.extraction("po-typo").fields.po_id == "PO-4"  # original extraction kept
     assert json.loads(store.corrections("po-typo")[0]["new_value"]) == "P0-4"
