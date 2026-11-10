@@ -176,3 +176,13 @@ column names, buttons say what they do ("Check all invoices", "Save and check ag
 labels, cents, finding codes and the raw response moved into one "Technical details" section.
 Seen in the browser at a narrow width: seven numbers in one row were cut to "Matc...", "Over...";
 the row now wraps. The page test was updated to the new labels and passes (54 tests).
+
+**Third version of the review page: two screens.** Plain words on the same long page were still
+not enough: the person I showed it to could not tell where to look. Rebuilt it the way a mailbox
+works. Screen 1 is a list: one row per invoice with one sentence about the result and an Open
+button. Screen 2 is one invoice in three steps: picture next to what was read (the correction
+form), a table with invoice / our order / delivered side by side, and "I checked this invoice".
+The sidebar is gone, the first start checks the invoices by itself with the saved answers, and
+re-running or live mode is under "Settings". Reconciliation code was not touched. The page test
+now walks list → open → correct → mark checked → back → restart (54 tests pass). Checked both
+screens in the browser.

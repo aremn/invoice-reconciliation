@@ -65,21 +65,23 @@ def test_review_page_correction_flow(tmp_path, monkeypatch):
     monkeypatch.setenv("INVOICE_DB", str(db))
     monkeypatch.setattr("app.config.DB_PATH", db)
 
+    # The first start checks all invoices with the saved answers and shows the list.
     page = AppTest.from_file(str(ROOT / "app" / "ui.py"), default_timeout=30).run()
-    assert not page.exception and "No results yet" in page.info[0].value
-    page.button[0].click().run()  # Check all invoices (saved answers)
     assert not page.exception
     assert {m.label: m.value for m in page.metric}["Overcharged in total"] == "$25.00"
 
-    page.selectbox[0].select("po-typo").run()
+    page.button(key="open-po-typo").click().run()  # open one invoice
+    assert not page.exception and "more than we agreed" in page.subheader[0].value
     page.text_input(key="po-typo-po_id").set_value("P0-4")
     next(b for b in page.button if b.label == "Save and check again").click().run()
-    assert not page.exception
-    metrics = {m.label: m.value for m in page.metric}
-    assert (metrics["Overcharged in total"], metrics["No order found"], metrics["Invoices that can be paid"]) == ("$20.00", "3", "3")
+    assert not page.exception and "cannot find the order" in page.subheader[0].value
 
     page.checkbox(key="po-typo-reviewed").check()
     next(b for b in page.button if b.label == "Save").click().run()
+
+    page.button(key="back").click().run()  # back to the list
+    metrics = {m.label: m.value for m in page.metric}
+    assert (metrics["Overcharged in total"], metrics["Invoices that can be paid"]) == ("$20.00", "3")
 
     # A new page on the same database file = the app after a restart.
     restarted = AppTest.from_file(str(ROOT / "app" / "ui.py"), default_timeout=30).run()

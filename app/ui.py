@@ -1,16 +1,15 @@
-"""Review queue (Streamlit).
+"""Review app (Streamlit).
 
 Run:  streamlit run app/ui.py
 
-The page is written for a reviewer who is not a programmer. It only shows what is saved in
-SQLite and what app/reconcile.py calculated. A reviewer correction is saved, everything is
-recalculated, and the page is drawn again.
+Written for a reviewer who is not a programmer. There are two screens:
 
-The page reads top to bottom like the reviewer's work:
-  summary -> list of invoices -> one invoice:
-  1. the invoice picture     2. what was read from it (and the correction form)
-  3. our own records         4. the check: amounts, what was found, draft note
-  5. "I checked this"        and, folded away, the technical details.
+  1. the list   - every invoice as one row: who, one sentence about the result, an Open button;
+  2. one invoice - the picture next to what was read from it, then a table that puts the
+                   invoice, our order and the delivery side by side.
+
+The page only shows what is saved in SQLite and what app/reconcile.py calculated. When the
+reviewer corrects a value it is saved, everything is recalculated, and the page is drawn again.
 """
 from __future__ import annotations
 
@@ -32,20 +31,19 @@ from app.run import recompute, run_batch
 from app.store import FIELD_NAMES, Store
 
 LABELS = {
-    "invoice_number": "Invoice number", "supplier_id": "Supplier", "po_id": "Order number (PO)",
-    "sku": "Item code", "quantity": "Quantity", "unit_cents": "Price per unit, $", "total_cents": "Total, $",
+    "invoice_number": "Invoice number", "supplier_id": "Supplier", "po_id": "Order number",
+    "sku": "Item", "quantity": "Quantity", "unit_cents": "Price per unit, $", "total_cents": "Total, $",
 }
 MONEY_FIELDS = ("unit_cents", "total_cents")
 
-# Plain name and badge colour for each status. The status code stays visible in brackets.
+# Plain name and badge colour for each status.
 STATUS_NAMES = {
-    "reconciled": ("Matches", "green"),
-    "discrepant": ("Differs", "orange"),
-    "duplicate": ("Duplicate", "violet"),
-    "unresolved": ("No order found", "blue"),
+    "reconciled": ("All good", "green"),
+    "discrepant": ("Does not match", "orange"),
+    "duplicate": ("Sent twice", "violet"),
+    "unresolved": ("Order not found", "blue"),
     "failed": ("Could not read", "red"),
 }
-MODES = {"replay": "Use saved answers (no key needed)", "live": "Ask the model again (needs a key)"}
 
 
 def to_text(name: str, value) -> str:
@@ -72,138 +70,143 @@ def from_text(name: str, text: str):
 
 
 def money(cents: int | None) -> str:
-    return "-" if cents is None else format_cents(cents)
-
-
-def status_label(status: str) -> str:
-    name = STATUS_NAMES[status][0]
-    return name if name.lower() == status else f"{name} ({status})"
+    return "" if cents is None else format_cents(cents)
 
 
 def verdict(result: ReconResult) -> str:
     """One plain sentence about the result. Wording only: every fact comes from `result`."""
     if result.status is Status.RECONCILED:
-        return "Everything on this invoice matches our order and the delivery."
+        return "The invoice matches our order and the delivery."
     if result.status is Status.DUPLICATE:
-        return f"We already have this invoice (see '{result.duplicate_of}'). It must not be paid twice."
+        return "We already received this invoice. It must not be paid twice."
     if result.status is Status.UNRESOLVED:
-        return "We could not find the order this invoice belongs to, so there is nothing to compare it with."
+        return "We cannot find the order this invoice belongs to, so it cannot be checked yet."
     if result.status is Status.FAILED:
-        return "This document could not be read. Nothing was checked."
+        return "This document could not be read."
     if result.difference_cents > 0:
-        return f"The invoice is {format_cents(result.difference_cents)} higher than we agreed."
+        return f"The supplier asks for {format_cents(result.difference_cents)} more than we agreed."
     if result.difference_cents < 0:
-        return f"The invoice is {format_cents(-result.difference_cents)} lower than we agreed."
-    return "The amount is right, but the quantity does not match our records."
+        return f"The supplier asks for {format_cents(-result.difference_cents)} less than we agreed."
+    return "The amount is right, but the quantity does not match what was delivered or ordered."
 
 
-st.set_page_config(page_title="Invoice review", layout="wide")
+def title_of(file_id: str, fields) -> str:
+    """How an invoice is called on the page: its number and supplier when they could be read."""
+    if fields is None or not fields.invoice_number:
+        return f"Document '{file_id}'"
+    return f"Invoice {fields.invoice_number}" + (f" from {fields.supplier_id}" if fields.supplier_id else "")
+
+
+st.set_page_config(page_title="Invoice check", layout="centered")
 store = Store(DB_PATH)
 reference = load_reference()
+mode = "live" if st.session_state.get("ask_model_again") else "replay"
 
-# --- sidebar: check the invoices ----------------------------------------------------
-with st.sidebar:
-    st.header("Start here")
-    mode = st.radio("How to read the invoices", list(MODES), format_func=MODES.get)
-    if st.button("Check all invoices", type="primary"):
-        run_batch(mode, store)
-    if st.button("Start over (forget my corrections)"):
-        store.reset()
-        run_batch(mode, store)
-    st.caption("A model reads each invoice picture. The comparison with our orders and all "
-               "amounts are calculated by the program, not by the model.")
-
+if not store.results():  # first start: check everything with the saved model answers
+    run_batch("replay", store)
 results = store.results()
-if not results:
-    st.info("No results yet. Press **Check all invoices** on the left.")
-    st.stop()
+by_id = {r.file_id: r for r in results}
+opened = st.session_state.get("opened")
 
-# --- summary ------------------------------------------------------------------------
-st.title("Invoice review")
-with st.expander("How to use this page"):
-    st.markdown(
-        "1. Pick an invoice from the list.\n"
-        "2. Compare the picture (card 1) with what was read from it (card 2).\n"
-        "3. If a value was read wrongly, type the right one and press **Save and check again**.\n"
-        "4. Look at the result in card 4, then tick **I checked this invoice**."
+
+# ====================================================================================
+# Screen 1: the list
+# ====================================================================================
+if opened not in by_id:
+    summary = summarize(results)
+    st.title("Invoices")
+    st.write("Each invoice was compared with our order and with what was delivered. Open one to see why.")
+
+    with st.container(horizontal=True):
+        st.metric("Overcharged in total", format_cents(summary.recoverable_cents), border=True,
+                  help="Only invoices matched to an order are counted. Invoices sent twice or without an order are not.")
+        st.metric("Invoices that can be paid", summary.payable_invoices, border=True,
+                  help="Invoices matched to an order. Invoices sent twice, unread or without an order are not counted.")
+
+    show = st.pills(
+        "Show", ["all"] + list(summary.counts), default="all",
+        format_func=lambda s: f"All ({len(results)})" if s == "all" else f"{STATUS_NAMES[s][0]} ({summary.counts[s]})",
     )
-summary = summarize(results)
-with st.container(horizontal=True):  # a row that wraps on a narrow screen instead of cutting the labels
-    for name, count in summary.counts.items():
-        st.metric(STATUS_NAMES[name][0], count, border=True, width="content")
-with st.container(horizontal=True):
-    st.metric("Overcharged in total", format_cents(summary.recoverable_cents), border=True, width="content",
-              help="Sum of the overcharges on matched invoices. Duplicates and invoices without an order are not counted.")
-    st.metric("Invoices that can be paid", summary.payable_invoices, border=True, width="content",
-              help="Matched invoices. Duplicates, unread documents and invoices without an order are not counted.")
+    for result in results:
+        if show not in ("all", None, result.status.value):
+            continue
+        name, colour = STATUS_NAMES[result.status.value]
+        with st.container(border=True):
+            text, button = st.columns([5, 1], vertical_alignment="center")
+            with text:
+                with st.container(horizontal=True):
+                    st.markdown(f"**{title_of(result.file_id, store.effective_fields(result.file_id))}**")
+                    st.badge(name, color=colour)
+                    if store.review(result.file_id)[0]:
+                        st.badge("checked by you", color="gray")
+                st.write(verdict(result))
+            if button.button("Open", key=f"open-{result.file_id}"):
+                st.session_state["opened"] = result.file_id
+                st.rerun()
 
-insight = build_insight(results)
-if insight is not None:
-    st.info("**What keeps going wrong:** " + insight.text)
+    insight = build_insight(results)
+    if insight is not None:
+        st.info("**What goes wrong most often.** " + insight.text)
 
-# --- list of invoices ---------------------------------------------------------------
-st.subheader("Invoices")
-show = st.pills("Show", ["all"] + [s.value for s in Status], default="all",
-                format_func=lambda value: "All invoices" if value == "all" else status_label(value))
-visible = [r for r in results if show in ("all", None, r.status.value)]
-st.dataframe(
-    [{
-        "invoice": r.file_id,
-        "result": status_label(r.status.value),
-        "we expected": money(r.expected_cents),
-        "they billed": money(r.billed_cents),
-        "difference": money(r.difference_cents),
-        "corrected": "yes" if store.corrections(r.file_id) else "",
-        "checked": "yes" if store.review(r.file_id)[0] else "",
-    } for r in visible],
-    hide_index=True, width="stretch",
-)
-if not visible:
+    with st.expander("Settings"):
+        st.checkbox("Ask the model again instead of using its saved answers (needs an API key)", key="ask_model_again")
+        if st.button("Read all invoices again"):
+            run_batch(mode, store)
+            st.rerun()
+        if st.button("Forget my corrections and start over"):
+            store.reset()
+            run_batch(mode, store)
+            st.rerun()
+    store.close()
     st.stop()
 
-# --- one invoice --------------------------------------------------------------------
-file_id = st.selectbox("Open an invoice", [r.file_id for r in visible])
-result = next(r for r in visible if r.file_id == file_id)
+
+# ====================================================================================
+# Screen 2: one invoice
+# ====================================================================================
+file_id = opened
+result = by_id[file_id]
 extraction = store.extraction(file_id)
 current = store.effective_fields(file_id)
 document = next(d for d in store.documents() if d["file_id"] == file_id)
 corrections = store.corrections(file_id)
+name, colour = STATUS_NAMES[result.status.value]
 
-st.subheader(file_id)
-st.badge(status_label(result.status.value), color=STATUS_NAMES[result.status.value][1])
-st.markdown(f"#### {verdict(result)}")
+if st.button("< Back to all invoices", key="back"):
+    del st.session_state["opened"]
+    st.rerun()
 
+st.title(title_of(file_id, current))
+st.badge(name, color=colour)
+st.subheader(verdict(result))
+
+# --- step 1: is the invoice read correctly? -----------------------------------------
+st.markdown("#### Step 1. Was the invoice read correctly?")
+st.write("On the left is the invoice. On the right is what the computer read from it. They must be the same.")
 left, right = st.columns(2)
-
-# 1. the invoice as it arrived
-with left.container(border=True):
-    st.markdown("**1. The invoice we received**")
+with left:
     image_path = ROOT / document["image"]
     if image_path.exists():
         st.image(str(image_path))
     else:
         st.error(f"Picture not found: {document['image']}")
-
-# 2. what the model read from it, and the correction form
-with right.container(border=True):
-    st.markdown("**2. What was read from it** - please compare with the picture")
+with right:
     if extraction.error:
-        st.error(f"The document could not be read: {extraction.error}")
+        st.error(f"The computer could not read this document: {extraction.error}")
     with st.form(f"correct-{file_id}"):
         typed = {
-            name: st.text_input(LABELS[name], value=to_text(name, getattr(current, name)) if current else "",
-                                key=f"{file_id}-{name}")
-            for name in FIELD_NAMES
+            field: st.text_input(LABELS[field], value=to_text(field, getattr(current, field)) if current else "",
+                                 key=f"{file_id}-{field}")
+            for field in FIELD_NAMES
         }
-        st.caption("Something is different from the picture? Type what is printed there. "
-                   "Leave a box empty if the invoice does not show it.")
+        st.caption("Not the same as on the invoice? Type what the invoice says and press the button.")
         if st.form_submit_button("Save and check again"):
             try:
-                new_values = {name: from_text(name, text) for name, text in typed.items()}
-                changed = {name: value for name, value in new_values.items()
-                           if value != (getattr(current, name) if current else None)}
-                for name, value in changed.items():
-                    store.add_correction(file_id, name, value)
+                new_values = {field: from_text(field, text) for field, text in typed.items()}
+                changed = {field: value for field, value in new_values.items()
+                           if value != (getattr(current, field) if current else None)}
+                for field, value in changed.items():
+                    store.add_correction(file_id, field, value)
             except ValueError as exc:
                 st.error(f"Not saved: {exc}")
             else:
@@ -211,63 +214,48 @@ with right.container(border=True):
                     draft_notes(store, recompute(store, reference), mode, only_changed=True)
                     st.rerun()
                 st.info("Nothing was changed.")
-    if corrections:
-        st.markdown("Your corrections (the first reading is kept):")
-        st.table([{
-            "what": LABELS[c["field"]],
-            "was read as": to_text(c["field"], json.loads(c["old_value"])),
-            "you corrected to": to_text(c["field"], json.loads(c["new_value"])),
-            "when (UTC)": c["corrected_at"],
-        } for c in corrections])
+if corrections:
+    st.write("You corrected:")
+    st.table([{
+        "what": LABELS[c["field"]],
+        "the computer read": to_text(c["field"], json.loads(c["old_value"])),
+        "you corrected to": to_text(c["field"], json.loads(c["new_value"])),
+    } for c in corrections])
 
-left, right = st.columns(2)
+# --- step 2: the comparison ---------------------------------------------------------
+st.markdown("#### Step 2. Does it match our records?")
+if result.expected_cents is not None:
+    order = next(po for po in reference.purchase_orders if po.po_id == result.po_id)
+    st.write(f"Our order {order.po_id} and what was delivered, next to the invoice:")
+    st.table([
+        {"": "Item", "invoice": current.sku, "our order": order.sku, "delivered": ""},
+        {"": "Quantity", "invoice": str(current.quantity), "our order": str(result.ordered_qty),
+         "delivered": str(result.received_qty)},
+        {"": "Price per unit", "invoice": money(current.unit_cents), "our order": money(result.agreed_unit_cents),
+         "delivered": ""},
+        {"": "Total", "invoice": money(result.billed_cents), "our order": money(result.expected_cents), "delivered": ""},
+    ])
+    st.write(f"Difference: invoice total minus our total = **{format_cents(result.difference_cents)}**")
+for finding in result.findings:
+    st.write(f"- {finding.message}")
+if not result.findings:
+    st.write("No problems found.")
 
-# 3. our own records for this invoice
-with left.container(border=True):
-    st.markdown("**3. What our records say**")
-    if result.po_id is None:
-        st.write("No order was found for this invoice, so there is no expected amount.")
+note = store.note(file_id)
+if note is not None:
+    st.markdown("#### Suggested message about this invoice")
+    st.caption("A draft written by the computer from the facts above. Read it before you use it.")
+    if note.error:
+        st.warning(f"No draft is available: {note.error}")
+    elif current is not None and note.facts_hash != facts_hash(result, current):
+        st.warning("The result changed after this draft was written. Use 'Read all invoices again' in Settings.")
     else:
-        st.caption("Our order - what we agreed to buy")
-        st.table([{"order": po.po_id, "supplier": po.supplier_id, "item": po.sku, "quantity": po.quantity,
-                   "price per unit": money(po.unit_cents)}
-                  for po in reference.purchase_orders if po.po_id == result.po_id])
-        st.caption("Delivery - what actually arrived")
-        st.table([{"receipt": r.receipt_id, "order": r.po_id, "item": r.sku, "quantity": r.quantity}
-                  for r in reference.receipts if r.receipt_id in result.receipt_ids]
-                 or [{"receipt": "nothing was recorded as delivered"}])
+        st.info(note.text)
 
-# 4. the comparison, done in code
-with right.container(border=True):
-    st.markdown("**4. The check**")
-    if result.expected_cents is not None:
-        st.table([
-            {"": "We expected", "how": f"{result.ordered_qty} ordered x {money(result.agreed_unit_cents)} agreed",
-             "amount": money(result.expected_cents)},
-            {"": "They billed", "how": "total on the invoice", "amount": money(result.billed_cents)},
-            {"": "Difference", "how": "billed minus expected", "amount": money(result.difference_cents)},
-        ])
-        st.write(f"Delivered: {result.received_qty}. Ordered: {result.ordered_qty}.")
-    st.markdown("What was found:")
-    for finding in result.findings:
-        st.write(f"- {finding.message}")
-    if not result.findings:
-        st.write("Nothing. No problems.")
-
-    note = store.note(file_id)
-    if note is not None:
-        st.markdown("Suggested note (a draft written by the model - read it before using it):")
-        if note.error:
-            st.warning(f"No note is available: {note.error}")
-        elif current is not None and note.facts_hash != facts_hash(result, current):
-            st.warning("The result changed after this note was written. Press **Check all invoices** to get a new one.")
-        else:
-            st.info(note.text)
-
-# 5. review state
+# --- step 3: done -------------------------------------------------------------------
+st.markdown("#### Step 3. Finished with this invoice?")
 reviewed, comment = store.review(file_id)
 with st.form(f"review-{file_id}"):
-    st.markdown("**5. Done?**")
     new_reviewed = st.checkbox("I checked this invoice", value=reviewed, key=f"{file_id}-reviewed")
     new_comment = st.text_input("Comment (optional)", value=comment, key=f"{file_id}-comment")
     if st.form_submit_button("Save"):
@@ -276,15 +264,17 @@ with st.form(f"review-{file_id}"):
 
 # --- technical details, for inspecting a failure -------------------------------------
 with st.expander("Technical details"):
+    st.write(f"File `{file_id}` ({document['image']}), status `{result.status.value}`")
     st.write(f"Model answer: `{extraction.label}` - model `{extraction.model}`, prompt `{extraction.prompt_version}`, "
              f"recorded {extraction.recorded_at or '-'}")
     if note is not None:
         st.write(f"Draft note: `{note.label}`")
     if extraction.fields is not None:
         st.write("First reading: " + ", ".join(
-            f"{LABELS[name]} = {to_text(name, getattr(extraction.fields, name)) or '(none)'}" for name in FIELD_NAMES))
+            f"{LABELS[field]} = {to_text(field, getattr(extraction.fields, field)) or '(none)'}" for field in FIELD_NAMES))
     if result.expected_cents is not None:
-        st.write(f"In cents: {result.billed_cents} - {result.expected_cents} = {result.difference_cents}")
+        st.write(f"Matched records: {result.po_id}, {', '.join(result.receipt_ids) or 'no receipt'}. "
+                 f"In cents: {result.billed_cents} - {result.expected_cents} = {result.difference_cents}")
     st.write("Finding codes: " + (", ".join(f"`{f.code}`" for f in result.findings) or "none"))
     st.write("Raw model response:")
     st.code(extraction.raw_text or "(no response)", language="json")

@@ -35,22 +35,39 @@ Each row is labelled `live`, `replayed` or `simulated-failure`. State is kept in
 
 The batch output also prints the draft discrepancy notes and one process insight.
 
-Review app. It is written for a reviewer who is not a programmer: plain words on the page, the
-status codes in brackets, technical details folded away at the bottom. It reads top to bottom:
-summary, list of invoices with a status filter, then one invoice in numbered cards - 1. the invoice
-picture, 2. what was read from it (this is also the correction form), 3. our order and delivery
-records, 4. the check (expected, billed, difference, what was found, draft note), 5. "I checked
-this invoice":
+Review app:
 
 ```bash
 .venv/Scripts/python -m streamlit run app/ui.py
 ```
 
-Press **Check all invoices** in the sidebar (saved answers by default). To see the correction flow: choose
-`po-typo`, compare the image (`P0-4`, digit zero) with the extracted `PO-4`, type `P0-4` into
-"Order number (PO)" and press **Save and check again**. The status becomes `unresolved`, the
-recoverable total goes from $25.00 to $20.00, the original extraction stays visible, and the
-state is still there after the app is restarted.
+It is written for a reviewer who is not a programmer and has two screens, like a mailbox:
+
+1. **The list.** Every invoice is one row: its number and supplier, a coloured label and one
+   sentence about the result ("The supplier asks for $20.00 more than we agreed."). Buttons above
+   the list filter by status and show the counts. On the first start the app checks all invoices
+   with the saved model answers, so there is nothing to press first.
+2. **One invoice** (button **Open**). Step 1: the invoice picture next to what was read from it;
+   the same boxes are the correction form. Step 2: a table with the invoice, our order and the
+   delivery side by side, the difference, what was found and the draft note. Step 3: "I checked
+   this invoice". Model labels, status codes, cents and the raw model response are folded into
+   "Technical details" at the bottom.
+
+The words on the page and the statuses of the brief:
+
+| On the page | Status |
+|---|---|
+| All good | `reconciled` |
+| Does not match | `discrepant` |
+| Sent twice | `duplicate` |
+| Order not found | `unresolved` |
+| Could not read | `failed` |
+
+To see the correction flow: open **Invoice INV-6 from S1** (file `po-typo`). The picture says
+`P0-4` (digit zero), the box "Order number" says `PO-4`. Type `P0-4` and press **Save and check
+again**. The result becomes "Order not found" (`unresolved`), the overcharged total on the list
+goes from $25.00 to $20.00, the first reading is kept, and the state is still there after the app
+is restarted. "Settings" at the bottom of the list has live mode and "start over".
 
 Change an input and rerun: edit or add an invoice record in `data/additions.json`, add it to
 `data/documents.json`, then
