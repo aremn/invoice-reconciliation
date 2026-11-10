@@ -136,3 +136,33 @@ with the correction flow, the process-improvement insight, check results, `ai-wo
 
 **Next:** check-results table, `ai-workflow/` records, walkthrough, README limitations and total
 time, run from a fresh clone, secret scan.
+
+## Day 4 — 2026-11-10: review screen, check results, AI setup records
+
+**Done**
+- `app/ui.py` reworked. The first version was one long page and was hard to follow. Now one
+  document is shown as numbered cards in the order a reviewer works: 1. the invoice image,
+  2. what the model read (the same fields are the correction form), 3. our purchase order and
+  receipt, 4. the calculation in dollars and cents, findings and draft note, 5. review state.
+  Each status has a one-line explanation. Widget keys and labels were kept, so the page test did
+  not change and still passes.
+- README: check-results table for the five minimum checks (expected from the hand-written key,
+  observed from a replay run), limitations, LLM usage. `docs/WALKTHROUGH.md`.
+- `ai-workflow/manifest.json` and `ai-workflow/README.md` filled in from the templates.
+- Run from a fresh clone (see below).
+
+**What did not work / fixes**
+1. *Temperature 0 did not give the same notes twice.* A live run from the review app re-recorded
+   `replay/`. `git diff replay/` showed the extracted fields unchanged (third identical run), but
+   all six notes were worded differently. All six still pass the note check, and the new recordings
+   are committed. The note for `po-typo` after the correction was not re-recorded, because that
+   state only exists after a correction.
+2. *Walking through the first screen showed the design problem, not a test.* All tests passed on
+   the long page; it was simply hard to read. Tests check behaviour, not whether a person can follow it.
+
+**Fresh clone check.** Cloned the repository into an empty folder with no `.env`, created a new
+venv, installed `requirements.txt`: 54 tests pass, `python -m app.run --mode replay` prints the same
+table and totals (recoverable $25.00, 4 payable), all notes are accepted, `scripts/check_expected.py` is OK.
+
+**Left for me before sending:** hand-check the five cases in `docs/reference-cases.md`, click
+through the app, fill the total time in the README.

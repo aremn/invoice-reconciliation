@@ -1,66 +1,170 @@
 {
-  "template": true,
-  "instructions": "Replace template values with exercise-specific records. Add entries for every configuration used, including earlier versions or their Git commits. No credentials.",
+  "template": false,
+  "exercise": "Alternative B - AI Invoice Reconciliation & Review Platform",
   "categories": {
     "development_tools_and_models": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["CLAUDE.md", "docs/DEVLOG.md"],
+      "notes": "Claude Code 2.1.309 in the Claude desktop app (Code tab) on Windows 11. Development model: Claude Fable 5.2 (claude-fable-5-2). Reasoning effort was lowered from extra-high to medium during day 2 to save usage; nothing else was changed from the defaults. The model of the first short session that drafted the project folder and CLAUDE.md was not recorded."
     },
     "plugins_and_extensions": {
-      "status": "complete-before-submission",
+      "status": "not-used",
       "files": [],
-      "notes": ""
+      "notes": "No plugins or IDE extensions were installed for this exercise."
     },
     "application_models_and_parameters": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["app/config.py", "app/llm.py", "app/extract.py", "app/notes.py", ".env.example"],
+      "notes": "OpenAI Responses API, model gpt-5.4-mini-2026-03-17 (pinned snapshot), temperature 0, strict JSON schema output, image input with default detail. Used for field extraction and for draft notes. Chosen after a three-way probe recorded in docs/DEVLOG.md (day 1)."
     },
     "skills": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [".claude/skills/generate-assignment-data/SKILL.md"],
+      "notes": "The starter pack's data-generation skill, unchanged, used once on day 2 for the added invoices. One user-level skill (developing-with-streamlit) was used on day 4; it only points the agent to the documentation bundled with the installed Streamlit package and is not copied here."
     },
     "agent_instructions_and_subagents": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": ["CLAUDE.md"],
+      "notes": "CLAUDE.md is the only agent instruction file. Its history is in Git (the Reviewability section was added in commit c7218af, commands were updated as modules appeared). No subagent definitions were created or used."
     },
     "hooks_and_scripts": {
-      "status": "complete-before-submission",
+      "status": "not-used",
       "files": [],
-      "notes": ""
+      "notes": "No hooks."
     },
     "prompts_and_rules": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [
+        "prompts/extract_invoice_v1.txt",
+        "prompts/extract_invoice_v2.txt",
+        "prompts/draft_note_v1.txt",
+        "tasks/invoices/domain.md"
+      ],
+      "notes": "Application prompts. extract_invoice_v1 is active. extract_invoice_v2 was tried against the P0-4 misread, did not help and is kept as a named snapshot together with its response in replay/history/. domain.md is the supplied rule file, unchanged."
     },
     "tool_and_mcp_settings": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "used",
+      "files": [".claude/launch.json"],
+      "notes": "launch.json starts the Streamlit app for the desktop app's built-in browser preview, which was used to open the review page after changes. No other tool or MCP server affected the exercise. Other MCP connectors enabled in the user's account were not used and are omitted."
     },
     "permissions_and_environment_names": {
-      "status": "complete-before-submission",
-      "files": [],
-      "notes": ""
+      "status": "default",
+      "files": [".env.example", ".gitignore"],
+      "notes": "No project permission file: tool calls were approved in the app (default and auto-approve modes), which is not exportable. Environment variable names: OPENAI_API_KEY (required for live mode only), OPENAI_MODEL (optional), INVOICE_DB (optional path of the SQLite file). .env is git-ignored."
     }
   },
   "configuration_records": [
     {
-      "name": "",
-      "category": "",
-      "purpose": "",
-      "original_path_or_scope": "",
+      "name": "CLAUDE.md",
+      "category": "agent_instructions_and_subagents",
+      "purpose": "Project rules for the coding agent: what the model may do, money in integer cents, matching rule, independent answer key, saved responses, how to work and report.",
+      "original_path_or_scope": "CLAUDE.md (project)",
+      "saved_path": "CLAUDE.md",
+      "version_or_commit": "current; earlier versions in Git history (972d3e7, c7218af, 782d6a7, 9bb3783, 35eac6f)",
+      "used_during": "the whole exercise",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "generate-assignment-data skill",
+      "category": "skills",
+      "purpose": "Extend the fictional starter data within the supplied rules.",
+      "original_path_or_scope": ".claude/skills/generate-assignment-data/ (project, from the starter pack)",
+      "saved_path": ".claude/skills/generate-assignment-data/SKILL.md",
+      "version_or_commit": "starter pack 2026-10-02, unchanged (972d3e7)",
+      "used_during": "day 2, data preparation (see data/GENERATION.md)",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "developing-with-streamlit skill",
+      "category": "skills",
+      "purpose": "Routes the agent to the reference docs shipped inside the installed Streamlit package before it edits Streamlit code.",
+      "original_path_or_scope": "user-level skill; the docs it reads are in .venv/Lib/site-packages/streamlit/.agents/skills/developing-with-streamlit/",
+      "saved_path": "",
+      "version_or_commit": "Streamlit 1.67.0",
+      "used_during": "day 4, rework of app/ui.py",
+      "status": "not-exportable",
+      "redactions": ["User-level skill, not copied. The referenced docs are restored by installing requirements.txt."]
+    },
+    {
+      "name": "Extraction prompt v1",
+      "category": "prompts_and_rules",
+      "purpose": "Read seven printed fields from an invoice image, copy them exactly, null when absent.",
+      "original_path_or_scope": "prompts/extract_invoice_v1.txt",
+      "saved_path": "prompts/extract_invoice_v1.txt",
+      "version_or_commit": "a35e933",
+      "used_during": "application, every extraction",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Extraction prompt v2",
+      "category": "prompts_and_rules",
+      "purpose": "v1 plus an explicit line about digit 0 versus letter O. Tried against the P0-4 misread; no effect.",
+      "original_path_or_scope": "prompts/extract_invoice_v2.txt",
+      "saved_path": "prompts/extract_invoice_v2.txt, response in replay/history/extract_invoice_v2/",
+      "version_or_commit": "a35e933",
+      "used_during": "day 2, one experiment",
+      "status": "not-used",
+      "redactions": []
+    },
+    {
+      "name": "Draft note prompt v1",
+      "category": "prompts_and_rules",
+      "purpose": "Write a neutral 2-4 sentence draft from verified facts only, copying IDs and amounts exactly.",
+      "original_path_or_scope": "prompts/draft_note_v1.txt",
+      "saved_path": "prompts/draft_note_v1.txt",
+      "version_or_commit": "c213994",
+      "used_during": "application, every draft note",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Application model settings",
+      "category": "application_models_and_parameters",
+      "purpose": "Model ID, temperature and paths in one place; strict JSON schemas next to the code that validates them.",
+      "original_path_or_scope": "app/config.py, app/extract.py (JSON_SCHEMA), app/notes.py (NOTE_SCHEMA)",
+      "saved_path": "app/config.py",
+      "version_or_commit": "a35e933, c213994",
+      "used_during": "application",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Preview launch configuration",
+      "category": "tool_and_mcp_settings",
+      "purpose": "Lets the desktop app start the Streamlit review page in its built-in browser so the agent can read the rendered page.",
+      "original_path_or_scope": ".claude/launch.json (project)",
+      "saved_path": ".claude/launch.json",
+      "version_or_commit": "added on day 4",
+      "used_during": "days 3-4, checking the review page",
+      "status": "used",
+      "redactions": []
+    },
+    {
+      "name": "Environment variables",
+      "category": "permissions_and_environment_names",
+      "purpose": "Provider key and optional overrides.",
+      "original_path_or_scope": ".env (local, git-ignored)",
+      "saved_path": ".env.example",
+      "version_or_commit": "4aababf",
+      "used_during": "live model calls only",
+      "status": "redacted",
+      "redactions": ["OPENAI_API_KEY value is not in the repository; .env.example has the name with an empty value."]
+    },
+    {
+      "name": "User-level Claude settings, memory and scheduled reminders",
+      "category": "permissions_and_environment_names",
+      "purpose": "Personal desktop-app settings, one memory note (explain the code in plain words) and reminders for the working days. They did not change what the code does.",
+      "original_path_or_scope": "user profile",
       "saved_path": "",
       "version_or_commit": "",
-      "used_during": "",
-      "status": "",
-      "redactions": []
+      "used_during": "the whole exercise",
+      "status": "not-exportable",
+      "redactions": ["Not copied: personal configuration unrelated to the exercise."]
     }
   ],
-  "replay_command": "",
-  "workflow_example_path": ""
+  "replay_command": ".venv/Scripts/python -m app.run --mode replay --reset",
+  "workflow_example_path": "ai-workflow/README.md#one-workflow-example"
 }

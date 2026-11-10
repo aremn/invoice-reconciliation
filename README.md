@@ -4,7 +4,7 @@ Take-home assignment B: a small local platform that reads supplier invoices, mat
 purchase orders and receipts, checks the amounts in code, and gives a reviewer a queue to
 inspect, correct and re-run.
 
-> Status: work in progress.
+Short walkthrough: `docs/WALKTHROUGH.md`. What went wrong during the work: `docs/DEVLOG.md`.
 
 ## Setup
 
@@ -35,8 +35,10 @@ Each row is labelled `live`, `replayed` or `simulated-failure`. State is kept in
 
 The batch output also prints the draft discrepancy notes and one process insight.
 
-Review app (queue with status filters, invoice image beside the extracted fields, matched records,
-calculation, draft note, correction form, review state):
+Review app. The page reads top to bottom: batch summary, queue with a status filter, then one
+document in numbered cards - 1. the invoice image, 2. what the model read (this is also the
+correction form), 3. our purchase order and receipt, 4. the calculation, findings and draft note,
+5. review state:
 
 ```bash
 .venv/Scripts/python -m streamlit run app/ui.py
@@ -137,13 +139,26 @@ covered by `tests/test_reconcile.py`):
 
 ## Check results (minimum demonstration)
 
+Expected values come from the hand-written answer key (`data/expected-results.json`, hand
+calculation in `docs/reference-cases.md`). Observed values are from `python -m app.run --mode replay`
+on the saved real model responses. Amounts are in cents.
+
 | # | Check | Expected | Observed | Pass |
 |---|---|---|---|---|
-| 1 | Clean invoice matches the intended PO and receipt; amounts agree | | | |
-| 2 | Wrong unit price gives the expected discrepancy, linked to invoice and agreed price | | | |
-| 3 | Duplicate is flagged and excluded from payable totals | | | |
-| 4 | Missing PO reference stays unresolved; no invented match or expected amount | | | |
-| 5 | Correcting an extracted field reruns reconciliation and persists after restart | | | |
+| 1 | Clean invoice (`clean`, INV-1) matches the intended PO and receipt; amounts agree | `reconciled`, PO-1 + RC-1, expected 10000, billed 10000, difference 0 | `reconciled`, PO-1 + RC-1, 10000 / 10000 / 0, no findings | yes |
+| 2 | Wrong unit price (`wrong-price`, INV-2) gives the expected discrepancy, linked to invoice and agreed price | `discrepant`, PO-2 + RC-2, expected 5 × 2000 = 10000, billed 12000, difference 2000 | `discrepant`, PO-2 + RC-2, 10000 / 12000 / 2000, findings `unit_price_mismatch` and `amount_difference` naming INV-2 and the agreed price | yes |
+| 3 | Duplicate (`duplicate`, second INV-1 from S1) is flagged and excluded from payable totals | `duplicate` of `clean`, no expected amount, not payable, not recoverable | `duplicate` of `clean`, no PO and no expected amount shown; payable invoices = 4 without it | yes |
+| 4 | Missing PO reference (`missing-reference`, INV-3) stays unresolved; no invented match or expected amount | `unresolved`, no PO, no expected amount, although PO-1 and PO-2 have the same amount | `unresolved`, PO none, expected none, finding `missing_po_reference` | yes |
+| 5 | Correcting an extracted field (`po-typo`: `po_id` PO-4 → printed P0-4) reruns reconciliation and persists after restart | before: `discrepant`, recoverable 2500, payable 4; after: `unresolved`, recoverable 2000, payable 3; same after reopening the database; original extraction still PO-4 | before 2500 / 4; after `unresolved`, 2000 / 3; the same after closing and reopening the SQLite file; original extraction PO-4 kept | yes |
+
+The same checks run as tests: `test_replayed_batch_against_the_hand_written_answer_key`,
+`test_reviewer_correction_reruns_and_survives_a_restart` (`tests/test_pipeline.py`),
+`test_review_page_correction_flow` (through the review page, `tests/test_notes_ui.py`) and the
+rule tests in `tests/test_reconcile.py`. 54 tests pass; none calls the model.
+
+**Failed check that could not be fixed:** the first extraction of `po-typo` did not match the
+answer key. The invoice prints `P0-4`; the model returns `PO-4`. Three attempts did not change it
+(see Known limitations), so it is reported, and it is the case used for check 5.
 
 ## Time spent
 
@@ -153,8 +168,9 @@ covered by `tests/test_reconcile.py`):
 | 2026-11-09 | Brief, environment, model probe, `reconcile.py` + tests (see `docs/DEVLOG.md`) | ~0.5 h |
 | 2026-11-10 | Added data + answer key, extraction with replay, SQLite store, batch run, tests | ~0.5 h |
 | 2026-11-10 | Draft notes with a code check, process insight, review app with correction flow, tests | ~0.5 h |
+| 2026-11-10 | Review screen reworked into numbered cards, check results, `ai-workflow/`, walkthrough, fresh-clone run | ~0.5 h |
 
-Total: TODO (limit: 8 hours)
+Total: TODO before sending - the rows above plus my own reading, hand checks and clicking through the app (limit: 8 hours)
 
 ## Known limitations
 
@@ -170,8 +186,24 @@ Total: TODO (limit: 8 hours)
   Statuses and amounts are still recalculated, because they do not need the model.
 - **The process insight is a count on nine documents.** It shows the most frequent cause in this
   batch, not a trend.
-- TODO (rest)
+- **Temperature 0 is not fully repeatable.** Three live runs returned the same extracted fields, but
+  a second live run worded all six draft notes differently. This is why every response is saved
+  and why the note check runs on every response, not once.
+- **One line per invoice.** Tax, partial billing, several lines, other currencies and PDF input are
+  outside the supplied rules and are not handled.
+- **No login and one local user.** The SQLite file is the only state; there is no audit of who
+  made a correction, only what was changed and when.
+- **Optional enhancements were not attempted** (PDF, export, note revisions).
 
 ## LLM usage
 
-TODO: see `ai-workflow/README.md` for tools, models, one workflow example and one correction.
+- **Development tool:** Claude Code (desktop app) generated the code, tests, added data and most of
+  this documentation. I set the rules in `CLAUDE.md`, decided what to build and in what order, and
+  checked the results (answer key by hand, the app in the browser).
+- **Application model:** OpenAI `gpt-5.4-mini-2026-03-17`, used for two things only: reading the
+  invoice image and drafting the note.
+- **One representative instruction and one correction:** `ai-workflow/README.md`.
+- **Where AI output was wrong and what caught it:** `docs/DEVLOG.md` (a missing test found by
+  breaking the rules on purpose; the `P0-4` misread found by the answer key; a note checker that
+  rejected correct notes, found by reading the batch output).
+- Walkthrough of the approach and findings: `docs/WALKTHROUGH.md`.
