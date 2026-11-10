@@ -189,13 +189,16 @@ answer key. The invoice prints `P0-4`; the model returns `PO-4`. Three attempts 
 
 | Date | Work | Time |
 |---|---|---|
-| 2026-11-09 | Project folder and `CLAUDE.md` drafted with Claude (separate session) | TODO |
+| 2026-11-09 | Project folder and `CLAUDE.md` drafted with Claude (separate session) | not timed separately |
 | 2026-11-09 | Brief, environment, model probe, `reconcile.py` + tests (see `docs/DEVLOG.md`) | ~0.5 h |
 | 2026-11-10 | Added data + answer key, extraction with replay, SQLite store, batch run, tests | ~0.5 h |
 | 2026-11-10 | Draft notes with a code check, process insight, review app with correction flow, tests | ~0.5 h |
-| 2026-11-10 | Review screen reworked into numbered cards, check results, `ai-workflow/`, walkthrough, fresh-clone run | ~0.5 h |
+| 2026-11-10 | Check results, `ai-workflow/`, walkthrough, fresh-clone run | ~0.5 h |
+| 2026-11-10 | Review app rebuilt after trying it: plain words, two screens, navigation, one "checked" button | not timed separately |
+| 2026-11-10 | Reading the brief and the code, hand check of the five reference cases, trying the app | not timed separately |
 
-Total: TODO before sending - the rows above plus my own reading, hand checks and clicking through the app (limit: 8 hours)
+Total: about 4 hours (my estimate for everything above; limit: 8 hours). The half-hour rows are the
+coding sessions with Claude Code; the rest of the time was reading, checking and trying the app.
 
 ## Known limitations
 

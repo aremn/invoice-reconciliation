@@ -77,8 +77,8 @@ extraction (`PO-4`) must stay visible.
 
 | # | Case | Checked by hand by | Date | Agrees with `data/expected-results.json` |
 |---|---|---|---|---|
-| 1 | clean | | | |
-| 2 | wrong-price | | | |
-| 3 | duplicate | | | |
-| 4 | missing-reference | | | |
-| 5 | po-typo correction | | | |
+| 1 | clean | Armen Epremian | 2026-11-10 | yes |
+| 2 | wrong-price | Armen Epremian | 2026-11-10 | yes |
+| 3 | duplicate | Armen Epremian | 2026-11-10 | yes |
+| 4 | missing-reference | Armen Epremian | 2026-11-10 | yes |
+| 5 | po-typo correction | Armen Epremian | 2026-11-10 | yes |
