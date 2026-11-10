@@ -132,6 +132,8 @@ if opened not in by_id:
     checked = sum(1 for r in results if store.review(r.file_id)[0])
     st.title("Invoices")
     st.caption(f"{len(results)} invoices were compared with our orders and deliveries. You checked {checked} of them.")
+    if checked == len(results):
+        st.success("**All done.** You checked every invoice. Nothing is left to do here.", icon=":material/task_alt:")
 
     with st.container(horizontal=True):
         st.metric("Overcharged in total", format_cents(summary.recoverable_cents), border=True,
@@ -294,10 +296,14 @@ with st.form(f"review-{file_id}"):
         undo = st.form_submit_button("Not checked yet") if reviewed else False
     if done or undo:
         store.save_review(file_id, bool(done), new_comment)
-        if done and next_id is not None:
-            st.session_state["opened"] = next_id
-        elif done:
-            del st.session_state["opened"]  # that was the last one: back to the list
+        if done:
+            # Open the next invoice that is not checked yet: first the ones after this one, then the ones before.
+            others = results[position + 1:] + results[:position]
+            not_checked = [r.file_id for r in others if not store.review(r.file_id)[0]]
+            if not_checked:
+                st.session_state["opened"] = not_checked[0]
+            else:
+                del st.session_state["opened"]  # everything is checked: back to the list, which says so
         st.rerun()
 
 # --- technical details, for inspecting a failure -------------------------------------

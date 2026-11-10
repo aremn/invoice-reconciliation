@@ -205,3 +205,7 @@ name (green / yellow / red), each step is its own framed block, the comparison t
 line with a green or red sign, and step 3 is a comment box with one button, "Checked - next
 invoice". Pressing it is the check mark. "Not checked yet" appears only on an invoice that was
 already checked. Checked in the browser on both screens; 54 tests pass.
+
+**Last small fix.** After the last invoice "Checked - next invoice" started again from the first
+one. Now it opens the next invoice that is not checked yet, and when none is left it returns to
+the list, which shows "All done. You checked every invoice."
