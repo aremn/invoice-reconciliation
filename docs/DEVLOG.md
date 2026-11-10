@@ -186,3 +186,14 @@ The sidebar is gone, the first start checks the invoices by itself with the save
 re-running or live mode is under "Settings". Reconciliation code was not touched. The page test
 now walks list → open → correct → mark checked → back → restart (54 tests pass). Checked both
 screens in the browser.
+
+**Feedback after trying the two screens** (four real problems, all fixed the same day):
+1. Going back to the list and pressing Open for every invoice does not scale. Added Previous / Next
+   and "Save and open the next invoice".
+2. Invoices with problems were mixed with good ones. The list and Next now go in one order:
+   does not match, order not found, sent twice, could not read, and no problems last.
+3. The invoice picture was too small to read. The invoice screen now uses the full width and the
+   picture fills its column.
+4. The comparison table had a "delivered" column that was empty in three rows of four and nobody
+   understood it. Now every line compares one thing on the invoice with one thing in our records,
+   says in words what that thing is, and ends with "yes" or "NO".

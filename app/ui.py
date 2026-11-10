@@ -44,6 +44,7 @@ STATUS_NAMES = {
     "unresolved": ("Order not found", "blue"),
     "failed": ("Could not read", "red"),
 }
+SHOW_ORDER = ["discrepant", "unresolved", "duplicate", "failed", "reconciled"]
 
 
 def to_text(name: str, value) -> str:
@@ -97,14 +98,17 @@ def title_of(file_id: str, fields) -> str:
     return f"Invoice {fields.invoice_number}" + (f" from {fields.supplier_id}" if fields.supplier_id else "")
 
 
-st.set_page_config(page_title="Invoice check", layout="centered")
+# The list is a narrow column; one invoice uses the whole width so the picture is large.
+st.set_page_config(page_title="Invoice check", layout="wide" if st.session_state.get("opened") else "centered")
 store = Store(DB_PATH)
 reference = load_reference()
 mode = "live" if st.session_state.get("ask_model_again") else "replay"
 
 if not store.results():  # first start: check everything with the saved model answers
     run_batch("replay", store)
-results = store.results()
+# Invoices with something to look at come first, the ones without problems last.
+# The same order is used by the list and by the Previous / Next buttons.
+results = sorted(store.results(), key=lambda r: SHOW_ORDER.index(r.status.value))
 by_id = {r.file_id: r for r in results}
 opened = st.session_state.get("opened")
 
@@ -124,7 +128,7 @@ if opened not in by_id:
                   help="Invoices matched to an order. Invoices sent twice, unread or without an order are not counted.")
 
     show = st.pills(
-        "Show", ["all"] + list(summary.counts), default="all",
+        "Show", ["all"] + SHOW_ORDER, default="all",
         format_func=lambda s: f"All ({len(results)})" if s == "all" else f"{STATUS_NAMES[s][0]} ({summary.counts[s]})",
     )
     for result in results:
@@ -172,9 +176,21 @@ document = next(d for d in store.documents() if d["file_id"] == file_id)
 corrections = store.corrections(file_id)
 name, colour = STATUS_NAMES[result.status.value]
 
-if st.button("< Back to all invoices", key="back"):
-    del st.session_state["opened"]
-    st.rerun()
+# --- moving between invoices without going back to the list --------------------------
+position = results.index(result)
+previous_id = results[position - 1].file_id if position > 0 else None
+next_id = results[position + 1].file_id if position + 1 < len(results) else None
+with st.container(horizontal=True, vertical_alignment="center"):
+    if st.button("All invoices", key="back"):
+        del st.session_state["opened"]
+        st.rerun()
+    if st.button("< Previous", key="previous", disabled=previous_id is None):
+        st.session_state["opened"] = previous_id
+        st.rerun()
+    if st.button("Next >", key="next", disabled=next_id is None):
+        st.session_state["opened"] = next_id
+        st.rerun()
+    st.write(f"Invoice {position + 1} of {len(results)}")
 
 st.title(title_of(file_id, current))
 st.badge(name, color=colour)
@@ -183,11 +199,11 @@ st.subheader(verdict(result))
 # --- step 1: is the invoice read correctly? -----------------------------------------
 st.markdown("#### Step 1. Was the invoice read correctly?")
 st.write("On the left is the invoice. On the right is what the computer read from it. They must be the same.")
-left, right = st.columns(2)
+left, right = st.columns([3, 2])
 with left:
     image_path = ROOT / document["image"]
     if image_path.exists():
-        st.image(str(image_path))
+        st.image(str(image_path), width="stretch")
     else:
         st.error(f"Picture not found: {document['image']}")
 with right:
@@ -226,16 +242,21 @@ if corrections:
 st.markdown("#### Step 2. Does it match our records?")
 if result.expected_cents is not None:
     order = next(po for po in reference.purchase_orders if po.po_id == result.po_id)
-    st.write(f"Our order {order.po_id} and what was delivered, next to the invoice:")
-    st.table([
-        {"": "Item", "invoice": current.sku, "our order": order.sku, "delivered": ""},
-        {"": "Quantity", "invoice": str(current.quantity), "our order": str(result.ordered_qty),
-         "delivered": str(result.received_qty)},
-        {"": "Price per unit", "invoice": money(current.unit_cents), "our order": money(result.agreed_unit_cents),
-         "delivered": ""},
-        {"": "Total", "invoice": money(result.billed_cents), "our order": money(result.expected_cents), "delivered": ""},
-    ])
-    st.write(f"Difference: invoice total minus our total = **{format_cents(result.difference_cents)}**")
+    st.write(f"Each line compares the invoice with what we have for order {order.po_id}.")
+    lines = [
+        ("Item", current.sku, order.sku, "what we ordered"),
+        ("Price per unit", money(current.unit_cents), money(result.agreed_unit_cents), "the price we agreed"),
+        ("Quantity", str(current.quantity), str(result.ordered_qty), "how many we ordered"),
+        ("Quantity", str(current.quantity), str(result.received_qty), "how many actually arrived"),
+        ("Total to pay", money(result.billed_cents), money(result.expected_cents), "ordered quantity x agreed price"),
+    ]
+    st.table([{
+        "": what,
+        "the invoice says": on_invoice,
+        "we have": f"{ours} - {meaning}",
+        "same?": "yes" if on_invoice.strip().lower() == ours.strip().lower() else "NO",
+    } for what, on_invoice, ours, meaning in lines])
+    st.write(f"Difference in the total: **{format_cents(result.difference_cents)}**")
 for finding in result.findings:
     st.write(f"- {finding.message}")
 if not result.findings:
@@ -258,8 +279,12 @@ reviewed, comment = store.review(file_id)
 with st.form(f"review-{file_id}"):
     new_reviewed = st.checkbox("I checked this invoice", value=reviewed, key=f"{file_id}-reviewed")
     new_comment = st.text_input("Comment (optional)", value=comment, key=f"{file_id}-comment")
-    if st.form_submit_button("Save"):
+    if st.form_submit_button("Save and open the next invoice", type="primary"):
         store.save_review(file_id, new_reviewed, new_comment)
+        if next_id is None:
+            del st.session_state["opened"]  # that was the last one: back to the list
+        else:
+            st.session_state["opened"] = next_id
         st.rerun()
 
 # --- technical details, for inspecting a failure -------------------------------------

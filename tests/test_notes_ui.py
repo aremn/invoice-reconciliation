@@ -77,7 +77,8 @@ def test_review_page_correction_flow(tmp_path, monkeypatch):
     assert not page.exception and "cannot find the order" in page.subheader[0].value
 
     page.checkbox(key="po-typo-reviewed").check()
-    next(b for b in page.button if b.label == "Save").click().run()
+    next(b for b in page.button if b.label == "Save and open the next invoice").click().run()
+    assert not page.exception  # the next invoice is open now
 
     page.button(key="back").click().run()  # back to the list
     metrics = {m.label: m.value for m in page.metric}
