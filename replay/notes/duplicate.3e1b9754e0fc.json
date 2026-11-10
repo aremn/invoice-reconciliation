@@ -1,12 +1,12 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:50+00:00",
+  "recorded_at": "2026-11-09T20:37:10+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "draft_note_v1",
   "input_sha256": "3e1b9754e0fc3ea14c5b42785adf3bb42fc02ccda19a624e41009ae3b4fd86b8",
-  "response_id": "resp_09210b040a908ad8006af22cc3852087d2b5595a0431f60be3",
+  "response_id": "resp_07bac4f07ce94cd1006af22ef3cbf887d2b64a2b8f61bc4dd3",
   "input_tokens": 247,
-  "output_tokens": 76,
-  "output_text": "{\"note\":\"Invoice INV-1 from supplier S1 is marked duplicate and is a duplicate of the document clean. The invoice shows purchase-order reference PO-1, but no purchase order is matched, so there is no expected amount. Please review the duplicate status and confirm whether INV-1 should remain excluded from payment.\"}"
+  "output_tokens": 90,
+  "output_text": "{\"note\":\"Invoice INV-1 from supplier S1 is marked duplicate, and it matches the clean document by the same supplier (S1) and invoice number (INV-1). The invoice shows purchase-order reference PO-1, but no purchase order is matched, so there is no expected amount. Please review the duplicate status and confirm whether INV-1 should be excluded from payment.\"}"
 }

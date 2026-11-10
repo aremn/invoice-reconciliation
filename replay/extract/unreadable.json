@@ -1,11 +1,11 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:46+00:00",
+  "recorded_at": "2026-11-09T20:37:06+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "extract_invoice_v1",
   "input_sha256": "25e4d5a638b79ef896f5eb49c032da2dab71687b84f43b721b0a5591c8a1024b",
-  "response_id": "resp_03cc7ee812124a8b006af22cc01a7887d289948617624eeb41",
+  "response_id": "resp_00a2fbc04931d381006af22eefad4087d28c61969967c8f2b8",
   "input_tokens": 1039,
   "output_tokens": 42,
   "output_text": "{\"invoice_number\":null,\"supplier_id\":null,\"po_id\":null,\"sku\":null,\"quantity\":null,\"unit_price\":null,\"total\":null}"

@@ -1,12 +1,12 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:54+00:00",
+  "recorded_at": "2026-11-09T20:37:14+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "draft_note_v1",
   "input_sha256": "594b7447a671c95a7cc6b91d41a9f4f7dc794ddba81f5c1918342ca85d13debf",
-  "response_id": "resp_040bd2c74f80b3a8006af22cc7786887d2a61dd9d99b67db96",
+  "response_id": "resp_0a93231571a6cff7006af22ef796b087d28ce536a7b1a53b33",
   "input_tokens": 284,
-  "output_tokens": 108,
-  "output_text": "{\"note\":\"Invoice INV-4 for supplier S1 references purchase order PO-3 and is marked discrepant. The matched purchase order PO-3 shows Ordered: 5 x $35.00 = $175.00 expected, and receipt RC-3 shows received quantity: 4. The invoice shows Billed: 5 x $35.00 = $175.00, so please review the quantity difference against RC-3 and confirm whether any correction is needed.\"}"
+  "output_tokens": 105,
+  "output_text": "{\"note\":\"Invoice INV-4 for supplier S1 references purchase order PO-3 and is marked discrepant. The matched purchase order PO-3 shows Ordered: 5 x $35.00 = $175.00 expected, and receipt RC-3 shows received quantity: 4, while the invoice shows Billed: 5 x $35.00 = $175.00. Please review the quantity difference between the invoice and receipt RC-3.\"}"
 }

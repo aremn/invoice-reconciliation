@@ -1,11 +1,11 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:44+00:00",
+  "recorded_at": "2026-11-09T20:37:04+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "extract_invoice_v1",
   "input_sha256": "4f54649cb6289edb34edb515095244a3f9ccc91b08621b6c88fa44c63859015f",
-  "response_id": "resp_0e58b4db57b60eb2006af22cbe718487d28e1f99b8ee75e697",
+  "response_id": "resp_09b3c36dcb402a50006af22eed711087d2adad46a04ca8d3a6",
   "input_tokens": 1039,
   "output_tokens": 54,
   "output_text": "{\"invoice_number\":\"INV-6\",\"supplier_id\":\"S1\",\"po_id\":\"PO-4\",\"sku\":\"ADP-1\",\"quantity\":\"10\",\"unit_price\":\"13.00\",\"total\":\"130.00\"}"

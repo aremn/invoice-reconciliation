@@ -1,12 +1,12 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:48+00:00",
+  "recorded_at": "2026-11-09T20:37:08+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "draft_note_v1",
   "input_sha256": "e8cb0e4b458a4c4e5cd04b5e1da704c0ce60c5207721f9f4f2d2c829ae73f36c",
-  "response_id": "resp_0e22661ecacb9db9006af22cc1b5a087d2b496441932713d26",
+  "response_id": "resp_0ec583569f2e54a1006af22ef143e487d2abec14097733caf5",
   "input_tokens": 315,
-  "output_tokens": 92,
-  "output_text": "{\"note\":\"Invoice INV-2 for supplier S1 references purchase order PO-2 and matches receipt RC-2. The invoice shows 5 x $24.00 = $120.00 billed, while PO-2 shows 5 x $20.00 = $100.00 expected. Please review the unit price difference on PO-2, INV-2, and RC-2.\"}"
+  "output_tokens": 98,
+  "output_text": "{\"note\":\"Invoice INV-2 for supplier S1 references PO-2 and matches purchase order PO-2 and receipt RC-2. The invoice bills 5 x $24.00 = $120.00, while PO-2 shows 5 x $20.00 = $100.00 expected. Please review the unit price on INV-2 against PO-2 and RC-2 to confirm the correct billing.\"}"
 }

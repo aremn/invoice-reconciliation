@@ -1,12 +1,12 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:57+00:00",
+  "recorded_at": "2026-11-09T20:37:18+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "draft_note_v1",
   "input_sha256": "f4b73d858860dc7ef8b882c38acd3b00d18729aedb7a322ed60aec6c5b6aab92",
-  "response_id": "resp_0c89c8feebba00e0006af22ccaef5487d29b52245bfae26c4d",
+  "response_id": "resp_008ff9d130bc89ad006af22efb801087d2b5501af5c504bb58",
   "input_tokens": 317,
-  "output_tokens": 104,
-  "output_text": "{\"note\":\"Invoice INV-6 for supplier S1 references PO-4 and matches purchase order PO-4 and receipt RC-4. The invoice shows billed 10 x $13.00 = $130.00, while PO-4 shows ordered 10 x $12.50 = $125.00 expected and RC-4 shows received quantity 10. Please review the $13.00 unit price on INV-6 against PO-4.\"}"
+  "output_tokens": 99,
+  "output_text": "{\"note\":\"Invoice INV-6 for supplier S1 references purchase order PO-4 and matches receipt RC-4. The invoice shows billed 10 x $13.00 = $130.00, while PO-4 shows ordered 10 x $12.50 = $125.00 expected. This leaves a $5.00 difference to clarify. Please review the unit price on PO-4 and the invoice before approval.\"}"
 }

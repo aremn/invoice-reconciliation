@@ -1,11 +1,11 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:34+00:00",
+  "recorded_at": "2026-11-09T20:36:53+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "extract_invoice_v1",
   "input_sha256": "c745d7b295bdba9a857a9728208ef3cd00a25d1a6a9e88db4c2d45504ae16e3a",
-  "response_id": "resp_07690735535cba4b006af22cb2bc3887d2abf6d5ab890b028f",
+  "response_id": "resp_06da6cad54ca754f006af22ee2714887d29d2617c99c39db98",
   "input_tokens": 1039,
   "output_tokens": 53,
   "output_text": "{\"invoice_number\":\"INV-1\",\"supplier_id\":\"S1\",\"po_id\":\"PO-1\",\"sku\":\"CAB-1\",\"quantity\":\"5\",\"unit_price\":\"20.00\",\"total\":\"100.00\"}"

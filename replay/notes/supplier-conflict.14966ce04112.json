@@ -1,12 +1,12 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:55+00:00",
+  "recorded_at": "2026-11-09T20:37:16+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "draft_note_v1",
   "input_sha256": "14966ce04112306eff6b8b5d16162ce1cc4786280b3c4024143a1a763addc833",
-  "response_id": "resp_0735c7549fca61f7006af22cc9531c87d2bfa39695ba7651d9",
+  "response_id": "resp_01d70de40cbe0fc8006af22ef9941087d28871a3e0366beec1",
   "input_tokens": 233,
-  "output_tokens": 75,
-  "output_text": "{\"note\":\"Invoice INV-5 references purchase order PO-1, but the verified purchase-order record shows PO-1 belongs to supplier S1 while the invoice is from S2. No purchase order is matched, so there is no expected amount. Please review the supplier and purchase-order reference for INV-5.\"}"
+  "output_tokens": 69,
+  "output_text": "{\"note\":\"Invoice INV-5 references purchase order PO-1, but PO-1 belongs to supplier S1 while the invoice is from S2. No purchase order is matched, so there is no expected amount. Please review the supplier and purchase-order reference for INV-5.\"}"
 }

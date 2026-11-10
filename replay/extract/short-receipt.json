@@ -1,11 +1,11 @@
 {
   "label": "live",
-  "recorded_at": "2026-11-09T20:27:41+00:00",
+  "recorded_at": "2026-11-09T20:37:00+00:00",
   "model": "gpt-5.4-mini-2026-03-17",
   "temperature": 0,
   "prompt_version": "extract_invoice_v1",
   "input_sha256": "da9cf313b9ef8865e3acac0182d26c19fb6d2a6aeb92df315401f7e30ca1c1c1",
-  "response_id": "resp_0f3c7dee4d8f4248006af22cbb00c887d29dfcf8008f077c3f",
+  "response_id": "resp_09ffec301ae2f077006af22eea0e2087d2af7a011b07f1aa24",
   "input_tokens": 1039,
   "output_tokens": 54,
   "output_text": "{\"invoice_number\":\"INV-4\",\"supplier_id\":\"S1\",\"po_id\":\"PO-3\",\"sku\":\"HUB-1\",\"quantity\":\"5\",\"unit_price\":\"35.00\",\"total\":\"175.00\"}"
